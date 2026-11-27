@@ -1,0 +1,21 @@
+@model IEnumerable<OrgChartDepartmentNodeViewModel>
+<ul>
+    @foreach (var dept in Model)
+    {
+        <li>
+            <div class="hrms-org-node">
+                <span class="hrms-kpi-icon bg-primary-subtle text-primary"><i class="bi bi-diagram-2"></i></span>
+                <div>
+                    <div class="fw-semibold small">@dept.DepartmentName <span class="text-body-secondary">(@dept.DepartmentCode)</span></div>
+                    <div class="text-body-secondary" style="font-size: 0.75rem;">
+                        @(dept.BranchName ?? "All Branches") &bull; @dept.Headcount active staff
+                    </div>
+                </div>
+            </div>
+            @if (dept.Children.Any())
+            {
+                <partial name="_DepartmentTreeNodes" model="dept.Children" />
+            }
+        </li>
+    }
+</ul>

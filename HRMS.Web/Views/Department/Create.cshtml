@@ -1,0 +1,4 @@
+@model DepartmentFormViewModel
+@{ ViewData["Title"] = "Create Department"; ViewData["BreadcrumbParent"] = "Departments"; }
+<partial name="_DepartmentForm" model="Model" />
+@section Scripts { <partial name="_ValidationScriptsPartial" /><script src="~/js/organization.js" asp-append-version="true"></script> }

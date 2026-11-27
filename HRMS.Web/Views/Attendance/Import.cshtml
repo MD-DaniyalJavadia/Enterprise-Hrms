@@ -1,0 +1,59 @@
+@model AttendanceImportResultViewModel
+@{
+    ViewData["Title"] = "Bulk Attendance Import";
+    ViewData["BreadcrumbParent"] = "Attendance & Shifts";
+}
+
+@section PageActions {
+    <div class="d-flex gap-2">
+        <a asp-action="DownloadImportTemplate" class="btn btn-outline-primary btn-sm"><i class="bi bi-download me-1"></i>Download CSV Template</a>
+        <a asp-action="Index" class="btn btn-outline-secondary btn-sm">Back to Register</a>
+    </div>
+}
+
+<div class="row g-3">
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-transparent fw-semibold py-3">Upload Biometric / CSV Attendance Log</div>
+            <div class="card-body">
+                <form asp-action="Import" method="post" enctype="multipart/form-data">
+                    @Html.AntiForgeryToken()
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger small py-2"></div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Select CSV File</label>
+                        <input type="file" name="csvFile" class="form-control" accept=".csv" required />
+                        <div class="form-text">Columns: EmployeeCode, AttendanceDate (yyyy-MM-dd), Status, CheckInTime (HH:mm), CheckOutTime (HH:mm), Remarks</div>
+                    </div>
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-upload me-1"></i>Import Attendance</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    @if (Model.TotalRowsProcessed > 0 || Model.RowErrors.Any())
+    {
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-transparent fw-semibold py-3">Import Summary</div>
+                <div class="card-body">
+                    <div class="d-flex gap-4 mb-3">
+                        <div><div class="small text-body-secondary">Processed</div><div class="fs-5 fw-bold">@Model.TotalRowsProcessed</div></div>
+                        <div><div class="small text-body-secondary">Imported</div><div class="fs-5 fw-bold text-success">@Model.ImportedCount</div></div>
+                        <div><div class="small text-body-secondary">Errors</div><div class="fs-5 fw-bold text-danger">@Model.RowErrors.Count</div></div>
+                    </div>
+                    @if (Model.RowErrors.Any())
+                    {
+                        <div class="alert alert-warning small mb-0">
+                            <ul class="mb-0 ps-3">
+                                @foreach (var err in Model.RowErrors)
+                                {
+                                    <li>@err</li>
+                                }
+                            </ul>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+</div>

@@ -1,0 +1,6 @@
+{
+  "name": "Enterprise HRMS - ASP.NET Core MVC",
+  "description": "Enterprise-level Human Resource Management System built with ASP.NET Core 8 MVC, Razor Views, Dapper ORM, and SQL Server 2022 Stored Procedures.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

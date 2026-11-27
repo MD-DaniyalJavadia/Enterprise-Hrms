@@ -1,0 +1,20 @@
+@{
+    Layout = User.Identity?.IsAuthenticated == true ? "_Layout" : "_AuthLayout";
+    var statusCode = ViewData["StatusCode"] ?? 500;
+    var title = ViewData["Title"]?.ToString() ?? "Error";
+    var message = ViewData["Message"]?.ToString() ?? "An unexpected error occurred.";
+}
+<div class="row justify-content-center py-4">
+    <div class="col-md-7 col-lg-6">
+        <div class="card border-0 shadow-sm rounded-4 p-5 text-center">
+            <div class="display-3 fw-bold text-primary mb-2">@statusCode</div>
+            <h2 class="h4 fw-bold mb-2">@title</h2>
+            <p class="text-body-secondary mb-4">@message</p>
+            <div>
+                <a asp-controller="Dashboard" asp-action="Index" class="btn btn-primary">
+                    <i class="bi bi-house-door me-1"></i>Back to Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+</div>

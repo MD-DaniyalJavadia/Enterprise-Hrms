@@ -1,0 +1,151 @@
+@model ShiftRosterPageViewModel
+@{
+    ViewData["Title"] = "Shift Roster & Assignments";
+    ViewData["BreadcrumbParent"] = "Attendance & Shifts";
+    var canManage = User.HasPermission("ATTENDANCE.MANAGE");
+}
+
+@section PageActions {
+    <div class="d-flex gap-2">
+        @if (User.HasPermission("ORG.VIEW"))
+        {
+            <a asp-controller="Organization" asp-action="Shifts" class="btn btn-outline-secondary btn-sm"><i class="bi bi-clock me-1"></i>Configure Shifts</a>
+        }
+        @if (canManage)
+        {
+            <button type="button" class="btn btn-primary btn-sm" onclick="HrmsAtt.openAssignmentModal()">
+                <i class="bi bi-plus-circle me-1"></i>Assign Shift
+            </button>
+        }
+    </div>
+}
+
+<div class="card border-0 shadow-sm mb-3">
+    <div class="card-body py-3">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-md-5">
+                <label class="form-label small fw-semibold">Filter by Employee</label>
+                <select name="employeeId" class="form-select form-select-sm hrms-select2">
+                    <option value="">All Employees</option>
+                    @foreach (var emp in Model.Employees)
+                    {
+                        <option value="@emp.EmployeeId" selected="@(Model.FilterEmployeeId == emp.EmployeeId)">@emp.EmployeeCode - @emp.FullName</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-2 d-flex gap-2">
+                <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-funnel"></i> Filter</button>
+                <a asp-action="Roster" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-counterclockwise"></i></a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle hrms-att-datatable w-100">
+                <thead>
+                    <tr>
+                        <th>Code</th>
+                        <th>Employee</th>
+                        <th>Department</th>
+                        <th>Assigned Shift</th>
+                        <th>Timings</th>
+                        <th>Weekly Off</th>
+                        <th>Effective Period</th>
+                        @if (canManage) { <th class="text-end">Actions</th> }
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var sa in Model.Assignments)
+                    {
+                        <tr>
+                            <td class="fw-semibold">@sa.EmployeeCode</td>
+                            <td class="fw-semibold">@sa.FullName</td>
+                            <td>@sa.DepartmentName</td>
+                            <td><span class="badge bg-primary-subtle text-primary-emphasis">@sa.ShiftCode</span> @sa.ShiftName</td>
+                            <td>@sa.StartTimeText - @sa.EndTimeText</td>
+                            <td class="small">@sa.WeeklyOffDays</td>
+                            <td class="small">@sa.EffectiveFrom.ToString("MMM dd, yyyy") &rarr; @(sa.EffectiveTo?.ToString("MMM dd, yyyy") ?? "Ongoing")</td>
+                            @if (canManage)
+                            {
+                                <td class="text-end text-nowrap">
+                                    <button type="button" class="btn btn-sm btn-outline-primary"
+                                            onclick='HrmsAtt.openAssignmentModal(@Html.Raw(System.Text.Json.JsonSerializer.Serialize(new { assignmentId = sa.AssignmentId, employeeId = sa.EmployeeId, shiftId = sa.ShiftId, effectiveFrom = sa.EffectiveFrom.ToString("yyyy-MM-dd"), effectiveTo = sa.EffectiveTo?.ToString("yyyy-MM-dd") ?? "", notes = sa.Notes ?? "" })))'>
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="HrmsAtt.deleteRecord('@Url.Action("DeleteShiftAssignment", new { id = sa.AssignmentId })', 'Shift Assignment')">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </td>
+                            }
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@if (canManage)
+{
+    <div class="modal fade" id="shiftAssignmentModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="saModalTitle">Assign Employee Shift</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="shiftAssignmentForm" onsubmit="event.preventDefault(); HrmsAtt.submitAjaxForm('#shiftAssignmentForm', '@Url.Action("SaveShiftAssignment")', '#shiftAssignmentModal');">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" id="saAssignmentId" name="AssignmentId" value="0" />
+                    <div class="modal-body">
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <label class="form-label small fw-semibold">Employee</label>
+                                <select id="saEmployeeId" name="EmployeeId" class="form-select" required>
+                                    <option value="">Select Employee...</option>
+                                    @foreach (var emp in Model.Employees)
+                                    {
+                                        <option value="@emp.EmployeeId">@emp.EmployeeCode - @emp.FullName</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label small fw-semibold">Shift</label>
+                                <select id="saShiftId" name="ShiftId" class="form-select" required>
+                                    <option value="">Select Shift...</option>
+                                    @foreach (var s in Model.Shifts)
+                                    {
+                                        <option value="@s.ShiftId">@s.ShiftName (@s.StartTimeText - @s.EndTimeText)</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-semibold">Effective From</label>
+                                <input id="saEffectiveFrom" type="date" name="EffectiveFrom" class="form-control" required />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-semibold">Effective To (Optional)</label>
+                                <input id="saEffectiveTo" type="date" name="EffectiveTo" class="form-control" />
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label small fw-semibold">Roster Notes</label>
+                                <textarea id="saNotes" name="Notes" class="form-control" rows="2" maxlength="300"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Save Assignment</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <script src="~/js/attendance.js" asp-append-version="true"></script>
+}

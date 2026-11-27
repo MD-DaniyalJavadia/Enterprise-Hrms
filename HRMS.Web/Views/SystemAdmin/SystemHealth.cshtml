@@ -1,0 +1,167 @@
+@model SystemHealthDiagnosticsViewModel
+@{
+    ViewData["Title"] = "System Health & Operations";
+    ViewData["BreadcrumbParent"] = "Workflows & Admin";
+    var isHealthy = string.Equals(Model.Status, "Healthy", StringComparison.OrdinalIgnoreCase);
+}
+
+@section PageActions {
+    <div class="d-flex gap-2">
+        <a asp-action="AuditLogs" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-journal-check me-1"></i>Audit Logs
+        </a>
+        <a asp-action="Settings" class="btn btn-outline-primary btn-sm">
+            <i class="bi bi-sliders me-1"></i>System Settings
+        </a>
+        <a href="/health" target="_blank" rel="noopener noreferrer" class="btn btn-outline-success btn-sm">
+            <i class="bi bi-heart-pulse me-1"></i>Probe JSON (/health)
+        </a>
+    </div>
+}
+
+<div class="row g-3 mb-4">
+    <div class="col-md-3 col-sm-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <div class="small text-body-secondary mb-1">Database Status</div>
+                <div class="d-flex align-items-center justify-content-between">
+                    <span class="fs-4 fw-bold @(isHealthy ? "text-success" : "text-danger")">@Model.Status</span>
+                    <span class="badge @(isHealthy ? "text-bg-success" : "text-bg-danger")">
+                        <i class="bi @(isHealthy ? "bi-check-circle-fill" : "bi-x-octagon-fill") me-1"></i>SQL Server
+                    </span>
+                </div>
+                <div class="small text-body-secondary mt-2">DB: <code>@Model.DatabaseName</code></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <div class="small text-body-secondary mb-1">Schema Objects</div>
+                <div class="fs-4 fw-bold">@Model.TableCount <span class="fs-6 fw-normal text-body-secondary">Tables</span></div>
+                <div class="small text-body-secondary mt-2">@Model.StoredProcedureCount Stored Procedures</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <div class="small text-body-secondary mb-1">Active Workforce &amp; Users</div>
+                <div class="fs-4 fw-bold">@Model.ActiveEmployees <span class="fs-6 fw-normal text-body-secondary">Employees</span></div>
+                <div class="small text-body-secondary mt-2">@Model.ActiveUsers Active Accounts (@Model.ActiveCompanies Co.)</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <div class="small text-body-secondary mb-1">Live Workload &amp; Logs</div>
+                <div class="fs-4 fw-bold">@Model.PendingWorkflows <span class="fs-6 fw-normal text-body-secondary">Open Workflows</span></div>
+                <div class="small text-body-secondary mt-2">@Model.UnreadNotifications Unread Alerts &middot; @Model.AuditLogCount Audit Rows</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-7">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-transparent border-bottom py-3">
+                <h2 class="h6 fw-semibold mb-0"><i class="bi bi-shield-check me-2 text-primary"></i>Security &amp; Runtime Hardening Posture</h2>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Control Area</th>
+                                <th>Configuration</th>
+                                <th class="text-end">State</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="fw-medium">Database Engine</td>
+                                <td class="small text-body-secondary">@Model.Edition (v@Model.ProductVersion)</td>
+                                <td class="text-end"><span class="badge text-bg-success">Connected</span></td>
+                            </tr>
+                            <tr>
+                                <td class="fw-medium">Data Access Layer</td>
+                                <td class="small text-body-secondary">Dapper with Stored Procedures &amp; Parameterized Parameters</td>
+                                <td class="text-end"><span class="badge text-bg-success">Enforced</span></td>
+                            </tr>
+                            <tr>
+                                <td class="fw-medium">Authentication &amp; Lockout</td>
+                                <td class="small text-body-secondary">PBKDF2-SHA256 (120k iterations), HttpOnly Cookie, 5-Attempt Lockout, Login Rate Limiter</td>
+                                <td class="text-end"><span class="badge text-bg-success">Active</span></td>
+                            </tr>
+                            <tr>
+                                <td class="fw-medium">CSRF &amp; HTTP Headers</td>
+                                <td class="small text-body-secondary">Antiforgery Tokens, CSP, X-Frame-Options, nosniff, Permissions-Policy, Brotli/Gzip</td>
+                                <td class="text-end"><span class="badge text-bg-success">Active</span></td>
+                            </tr>
+                            <tr>
+                                <td class="fw-medium">File Vault Isolation</td>
+                                <td class="small text-body-secondary">Extension Allowlists, Byte Ceilings, Randomized GUID Filenames, Confined Paths</td>
+                                <td class="text-end"><span class="badge text-bg-success">Active</span></td>
+                            </tr>
+                            <tr>
+                                <td class="fw-medium">Telemetry Snapshot (UTC)</td>
+                                <td class="small text-body-secondary">@Model.UtcTimestamp.ToString("yyyy-MM-dd HH:mm:ss") UTC &middot; @Model.LoginHistoryCount Login Records</td>
+                                <td class="text-end"><span class="badge text-bg-info">Live</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-5">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-transparent border-bottom py-3">
+                <h2 class="h6 fw-semibold mb-0"><i class="bi bi-wrench-adjustable-circle me-2 text-warning"></i>Database Retention Maintenance</h2>
+            </div>
+            <div class="card-body">
+                <p class="small text-body-secondary mb-3">
+                    Safely purge aged read/expired notifications and historical login telemetry while preserving immutable compliance audit logs (<code>tbl_AuditLogs</code>).
+                </p>
+
+                <form id="maintenanceCleanupForm">
+                    @Html.AntiForgeryToken()
+                    <div class="mb-3">
+                        <label for="NotificationRetentionDays" class="form-label fw-medium">Notification Retention (Days)</label>
+                        <input type="number" class="form-control" id="NotificationRetentionDays" name="NotificationRetentionDays"
+                               value="@Model.NotificationRetentionDays" min="7" max="3650" required />
+                        <div class="form-text">Minimum 7 days. Expired notifications and read items older than this threshold are removed.</div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="LoginHistoryRetentionDays" class="form-label fw-medium">Login History Retention (Days)</label>
+                        <input type="number" class="form-control" id="LoginHistoryRetentionDays" name="LoginHistoryRetentionDays"
+                               value="@Model.LoginHistoryRetentionDays" min="30" max="3650" required />
+                        <div class="form-text">Minimum 30 days. Older sign-in attempt telemetry is pruned for index efficiency.</div>
+                    </div>
+
+                    @if (Model.CanManageAdmin)
+                    {
+                        <button type="button" class="btn btn-warning w-100 fw-medium"
+                                onclick="HrmsAdmin.submitAjaxForm('#maintenanceCleanupForm', '/SystemAdmin/RunMaintenance', null)">
+                            <i class="bi bi-recycle me-1"></i>Run Retention Cleanup Now
+                        </button>
+                    }
+                    else
+                    {
+                        <div class="alert alert-light border small mb-0">
+                            <i class="bi bi-lock me-1"></i>You have read-only access. <code>ADMIN.MANAGE</code> permission is required to execute maintenance cleanup.
+                        </div>
+                    }
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/system-admin.js" asp-append-version="true"></script>
+}

@@ -1,0 +1,5 @@
+E:\enterprise-hrms---asp.net-core-mvc\HRMS.Business\obj\Debug\net8.0\HRMS.Business.csproj.AssemblyReference.cache
+E:\enterprise-hrms---asp.net-core-mvc\HRMS.Business\obj\Debug\net8.0\HRMS.Business.GeneratedMSBuildEditorConfig.editorconfig
+E:\enterprise-hrms---asp.net-core-mvc\HRMS.Business\obj\Debug\net8.0\HRMS.Business.AssemblyInfoInputs.cache
+E:\enterprise-hrms---asp.net-core-mvc\HRMS.Business\obj\Debug\net8.0\HRMS.Business.AssemblyInfo.cs
+E:\enterprise-hrms---asp.net-core-mvc\HRMS.Business\obj\Debug\net8.0\HRMS.Business.csproj.CoreCompileInputs.cache

@@ -1,0 +1,102 @@
+@model ManagerTeamPageViewModel
+@{
+    ViewData["Title"] = "My Team Roster";
+    ViewData["BreadcrumbParent"] = "Manager Portal";
+}
+
+@section PageActions {
+    <div class="d-flex gap-2">
+        <a asp-action="ExportTeamCsv" asp-route-departmentId="@Model.FilterDepartmentId" asp-route-search="@Model.FilterSearch" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-download me-1"></i>Export CSV
+        </a>
+        <a asp-action="Approvals" class="btn btn-primary btn-sm">
+            <i class="bi bi-check2-all me-1"></i>Pending Approvals
+        </a>
+    </div>
+}
+
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+        <form method="get" asp-action="Team" class="row g-3 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label small">Department</label>
+                <select name="departmentId" class="form-select form-select-sm">
+                    <option value="">All Departments</option>
+                    @foreach (var d in Model.Departments)
+                    {
+                        <option value="@d.DepartmentId" selected="@(Model.FilterDepartmentId == d.DepartmentId)">@d.DepartmentName</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-5">
+                <label class="form-label small">Search Employee / Designation</label>
+                <input type="text" name="search" value="@Model.FilterSearch" class="form-control form-control-sm" placeholder="Name, code, or job title..." />
+            </div>
+            <div class="col-md-3 d-flex gap-2">
+                <button type="submit" class="btn btn-primary btn-sm flex-grow-1">Filter</button>
+                <a asp-action="Team" class="btn btn-outline-secondary btn-sm">Reset</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle hrms-portal-datatable small">
+                <thead class="table-light">
+                    <tr>
+                        <th>Employee</th>
+                        <th>Department &amp; Role</th>
+                        <th>Reporting</th>
+                        <th>Shift</th>
+                        <th>Today Status</th>
+                        <th>Open Goals</th>
+                        <th>Pending Leaves</th>
+                        <th>Contact</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var m in Model.Members)
+                    {
+                        var badge = m.TodayStatus switch { "Present" => "bg-success", "Late" => "bg-warning text-dark", "OnLeave" => "bg-info text-dark", "Absent" => "bg-danger", _ => "bg-secondary" };
+                        <tr>
+                            <td>
+                                <div class="fw-semibold">@m.FullName</div>
+                                <div class="text-body-secondary">@m.EmployeeCode &bull; @m.BranchName</div>
+                            </td>
+                            <td>
+                                <div>@m.DepartmentName</div>
+                                <div class="text-body-secondary">@m.DesignationTitle</div>
+                            </td>
+                            <td>
+                                <span class="badge @(m.ReportingLevel == 1 ? "bg-primary-subtle text-primary-emphasis" : "bg-secondary-subtle text-secondary-emphasis")">
+                                    @(m.ReportingLevel == 1 ? "Direct" : $"Level {m.ReportingLevel}")
+                                </span>
+                                <div class="text-body-secondary">@(m.ManagerName ?? "-")</div>
+                            </td>
+                            <td>@m.ShiftName</td>
+                            <td>
+                                <span class="badge @badge">@m.TodayStatus</span>
+                                @if (m.CheckInTime.HasValue)
+                                {
+                                    <div class="text-body-secondary">@m.CheckInTime.Value.ToString("HH:mm") - @(m.CheckOutTime?.ToString("HH:mm") ?? "Active")</div>
+                                }
+                            </td>
+                            <td><span class="badge bg-body-secondary text-body-emphasis">@m.OpenGoalsCount</span></td>
+                            <td><span class="badge @(m.PendingLeaveCount > 0 ? "bg-warning text-dark" : "bg-body-secondary text-body-emphasis")">@m.PendingLeaveCount</span></td>
+                            <td>
+                                <div>@m.WorkEmail</div>
+                                <div class="text-body-secondary">@(m.Phone ?? "-")</div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/portal.js" asp-append-version="true"></script>
+}

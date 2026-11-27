@@ -1,0 +1,250 @@
+@using System.Text.Json
+@model TrainingEnrollmentsPageViewModel
+@{
+    ViewData["Title"] = "Training Enrollments & Certifications";
+    ViewData["BreadcrumbParent"] = "Performance & Training";
+    var canManage = User.HasPermission("TRAINING.MANAGE");
+    var currentEmployeeId = User.GetEmployeeId();
+    var camelOpts = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+}
+
+@section PageActions {
+    <div class="d-flex flex-wrap gap-2">
+        <a asp-action="ExportEnrollments" asp-route-programId="@Model.ProgramId" asp-route-employeeId="@Model.EmployeeId" asp-route-status="@Model.Status"
+           class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-download me-1"></i>Export CSV
+        </a>
+        <a asp-action="Index" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-mortarboard me-1"></i>Programs
+        </a>
+        <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#enrollModal">
+            <i class="bi bi-person-plus me-1"></i>Enroll Employee
+        </button>
+    </div>
+}
+
+<!-- Filter Strip -->
+<div class="card border-0 shadow-sm mb-3">
+    <div class="card-body py-3">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label small fw-semibold">Training Program</label>
+                <select name="programId" class="form-select form-select-sm hrms-select2">
+                    <option value="">All Programs</option>
+                    @foreach (var p in Model.Programs)
+                    {
+                        <option value="@p.ProgramId" selected="@(Model.ProgramId == p.ProgramId)">@p.ProgramCode — @p.ProgramTitle</option>
+                    }
+                </select>
+            </div>
+            @if (canManage)
+            {
+                <div class="col-md-3">
+                    <label class="form-label small fw-semibold">Employee</label>
+                    <select name="employeeId" class="form-select form-select-sm hrms-select2">
+                        <option value="">All Employees</option>
+                        @foreach (var emp in Model.Employees)
+                        {
+                            <option value="@emp.EmployeeId" selected="@(Model.EmployeeId == emp.EmployeeId)">@emp.FullName (@emp.EmployeeCode)</option>
+                        }
+                    </select>
+                </div>
+            }
+            <div class="col-md-3">
+                <label class="form-label small fw-semibold">Attendance Status</label>
+                <select name="status" class="form-select form-select-sm">
+                    <option value="">All Statuses</option>
+                    @foreach (var st in new[] { "Enrolled", "Attended", "Completed", "NoShow", "Dropped" })
+                    {
+                        <option value="@st" selected="@(string.Equals(Model.Status, st, StringComparison.OrdinalIgnoreCase))">@st</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-2 d-flex gap-2">
+                <button type="submit" class="btn btn-primary btn-sm flex-fill"><i class="bi bi-funnel me-1"></i>Filter</button>
+                <a asp-action="Enrollments" class="btn btn-outline-secondary btn-sm" title="Reset"><i class="bi bi-arrow-counterclockwise"></i></a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Enrollments Table -->
+<div class="card border-0 shadow-sm">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle hrms-pt-datatable w-100">
+                <thead>
+                    <tr>
+                        <th>Employee</th>
+                        <th>Training Program</th>
+                        <th>Enrolled</th>
+                        <th class="text-center">Score</th>
+                        <th>Certificate</th>
+                        <th>Status</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var e in Model.Enrollments)
+                    {
+                        var stBadge = e.AttendanceStatus switch
+                        {
+                            "Completed" => "bg-success-subtle text-success-emphasis",
+                            "Attended" => "bg-info-subtle text-info-emphasis",
+                            "Enrolled" => "bg-primary-subtle text-primary-emphasis",
+                            _ => "bg-danger-subtle text-danger-emphasis"
+                        };
+                        <tr>
+                            <td>
+                                <div class="fw-semibold">@e.EmployeeName</div>
+                                <div class="small text-body-secondary">@e.EmployeeCode &bull; @e.DepartmentName</div>
+                            </td>
+                            <td>
+                                <div class="fw-medium">@e.ProgramTitle</div>
+                                <div class="small text-body-secondary">@e.ProgramCode &bull; @e.Category</div>
+                            </td>
+                            <td class="small">@e.EnrollmentDate.ToString("dd MMM yyyy")</td>
+                            <td class="text-center fw-medium">@(e.AssessmentScore.HasValue ? $"{e.AssessmentScore.Value:0.0}%" : "-")</td>
+                            <td class="small">
+                                @if (!string.IsNullOrWhiteSpace(e.CertificateNumber))
+                                {
+                                    <span class="badge bg-light text-dark border">@e.CertificateNumber</span>
+                                    @if (e.CompletionDate.HasValue)
+                                    {
+                                        <div class="text-body-secondary">@e.CompletionDate.Value.ToString("dd MMM yyyy")</div>
+                                    }
+                                }
+                                else
+                                {
+                                    <span class="text-body-secondary">-</span>
+                                }
+                            </td>
+                            <td><span class="badge @stBadge">@e.AttendanceStatus</span></td>
+                            <td class="text-end text-nowrap">
+                                @if (canManage)
+                                {
+                                    <button type="button" class="btn btn-sm btn-outline-success" title="Record Outcome / Certificate"
+                                            onclick='HrmsPerfTrn.openOutcomeModal(@Html.Raw(JsonSerializer.Serialize(e, camelOpts)))'>
+                                        <i class="bi bi-patch-check me-1"></i>Outcome
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-danger" title="Remove Enrollment"
+                                            onclick='HrmsPerfTrn.deleteEnrollment(@e.EnrollmentId, @Html.Raw(JsonSerializer.Serialize($"{e.EmployeeName} ({e.ProgramCode})")))'>
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Enroll Modal -->
+<div class="modal fade" id="enrollModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-person-plus me-2 text-primary"></i>Enroll in Training Program</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="enrollForm" onsubmit="event.preventDefault(); HrmsPerfTrn.submitAjaxForm('#enrollForm', '@Url.Action("Enroll")', '#enrollModal');">
+                @Html.AntiForgeryToken()
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Training Program <span class="text-danger">*</span></label>
+                        <select name="ProgramId" class="form-select" required>
+                            <option value="">Select Program</option>
+                            @foreach (var p in Model.Programs.Where(x => x.ProgramStatus != "Cancelled"))
+                            {
+                                <option value="@p.ProgramId" selected="@(Model.ProgramId == p.ProgramId)">
+                                    @p.ProgramCode — @p.ProgramTitle (@p.EnrolledCount/@p.MaxParticipants seats)
+                                </option>
+                            }
+                        </select>
+                    </div>
+                    <div>
+                        <label class="form-label small fw-semibold">Employee <span class="text-danger">*</span></label>
+                        <select name="EmployeeId" class="form-select" required>
+                            @if (canManage)
+                            {
+                                <option value="">Select Employee</option>
+                            }
+                            @foreach (var emp in Model.Employees)
+                            {
+                                <option value="@emp.EmployeeId" selected="@(currentEmployeeId == emp.EmployeeId)">@emp.FullName (@emp.EmployeeCode)</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Confirm Enrollment</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@if (canManage)
+{
+    <!-- Outcome / Certification Modal -->
+    <div class="modal fade" id="outcomeModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-patch-check me-2 text-success"></i>Training Outcome &amp; Certificate</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="outcomeForm" onsubmit="event.preventDefault(); HrmsPerfTrn.submitAjaxForm('#outcomeForm', '@Url.Action("UpdateOutcome")', '#outcomeModal');">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" id="outEnrId" name="EnrollmentId" value="0" />
+                    <div class="modal-body">
+                        <div class="mb-3 fw-semibold" id="outLabel"></div>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label small fw-semibold">Status <span class="text-danger">*</span></label>
+                                <select id="outStatus" name="AttendanceStatus" class="form-select" required>
+                                    <option value="Enrolled">Enrolled</option>
+                                    <option value="Attended">Attended</option>
+                                    <option value="Completed">Completed</option>
+                                    <option value="NoShow">No Show</option>
+                                    <option value="Dropped">Dropped</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-semibold">Assessment Score (%)</label>
+                                <input type="number" step="0.5" min="0" max="100" id="outScore" name="AssessmentScore" class="form-control" />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-semibold">Certificate Number</label>
+                                <input type="text" id="outCert" name="CertificateNumber" class="form-control" maxlength="50" />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-semibold">Completion Date</label>
+                                <input type="date" id="outDate" name="CompletionDate" class="form-control" />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-semibold">Participant Rating (1-5)</label>
+                                <input type="number" min="1" max="5" id="outRating" name="FeedbackRating" class="form-control" />
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label small fw-semibold">Feedback Notes</label>
+                                <textarea id="outNotes" name="FeedbackNotes" class="form-control" rows="2" maxlength="400"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-success">Save Outcome</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <script src="~/js/performance-training.js" asp-append-version="true"></script>
+}

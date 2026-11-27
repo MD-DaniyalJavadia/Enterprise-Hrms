@@ -1,0 +1,319 @@
+@model LeaveApplicationsPageViewModel
+@{
+    ViewData["Title"] = "Leave Applications";
+    ViewData["BreadcrumbParent"] = "Leave Management";
+    var canManage = User.HasPermission("LEAVE.MANAGE");
+}
+
+@section PageActions {
+    <div class="d-flex flex-wrap gap-2">
+        <a asp-action="Balances" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-wallet2 me-1"></i>Balances
+        </a>
+        <a asp-action="Calendar" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-calendar-range me-1"></i>Team Calendar
+        </a>
+        <a asp-action="ExportApplications"
+           asp-route-employeeId="@Model.EmployeeId"
+           asp-route-departmentId="@Model.DepartmentId"
+           asp-route-leaveTypeId="@Model.LeaveTypeId"
+           asp-route-status="@Model.ApprovalStatus"
+           class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-file-earmark-spreadsheet me-1"></i>Export CSV
+        </a>
+        @if (canManage || Model.CurrentUserEmployeeId.HasValue)
+        {
+            <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#applyLeaveModal">
+                <i class="bi bi-plus-circle me-1"></i>Apply Leave
+            </button>
+        }
+    </div>
+}
+
+<!-- KPI Summary Strip -->
+<div class="row g-3 mb-3">
+    <div class="col-6 col-lg-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body py-3">
+                <div class="small text-warning fw-semibold">Pending Approval</div>
+                <div class="fs-4 fw-bold text-warning">@Model.Kpi.PendingCount</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body py-3">
+                <div class="small text-success fw-semibold">Approved This Month</div>
+                <div class="fs-4 fw-bold text-success">@Model.Kpi.ApprovedThisMonthCount</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body py-3">
+                <div class="small text-primary fw-semibold">On Leave Today</div>
+                <div class="fs-4 fw-bold text-primary">@Model.Kpi.OnLeaveTodayCount</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body py-3">
+                <div class="small text-danger fw-semibold">Rejected</div>
+                <div class="fs-4 fw-bold text-danger">@Model.Kpi.RejectedCount</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filter Strip -->
+<div class="card border-0 shadow-sm mb-3">
+    <div class="card-body py-3">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label small fw-semibold">Employee</label>
+                <select name="employeeId" class="form-select form-select-sm hrms-select2">
+                    <option value="">All Employees</option>
+                    @foreach (var emp in Model.Employees)
+                    {
+                        <option value="@emp.EmployeeId" selected="@(Model.EmployeeId == emp.EmployeeId)">@emp.EmployeeCode - @emp.FullName</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small fw-semibold">Department</label>
+                <select name="departmentId" class="form-select form-select-sm">
+                    <option value="">All Departments</option>
+                    @foreach (var d in Model.Departments)
+                    {
+                        <option value="@d.DepartmentId" selected="@(Model.DepartmentId == d.DepartmentId)">@d.DepartmentName</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small fw-semibold">Leave Type</label>
+                <select name="leaveTypeId" class="form-select form-select-sm">
+                    <option value="">All Types</option>
+                    @foreach (var lt in Model.LeaveTypes)
+                    {
+                        <option value="@lt.LeaveTypeId" selected="@(Model.LeaveTypeId == lt.LeaveTypeId)">@lt.LeaveName</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small fw-semibold">Status</label>
+                <select name="status" class="form-select form-select-sm">
+                    <option value="">All Statuses</option>
+                    <option value="Pending" selected="@(Model.ApprovalStatus == "Pending")">Pending</option>
+                    <option value="Approved" selected="@(Model.ApprovalStatus == "Approved")">Approved</option>
+                    <option value="Rejected" selected="@(Model.ApprovalStatus == "Rejected")">Rejected</option>
+                    <option value="Cancelled" selected="@(Model.ApprovalStatus == "Cancelled")">Cancelled</option>
+                </select>
+            </div>
+            <div class="col-md-2 d-flex gap-2">
+                <button type="submit" class="btn btn-primary btn-sm flex-fill"><i class="bi bi-funnel me-1"></i>Filter</button>
+                <a asp-action="Index" class="btn btn-outline-secondary btn-sm" title="Reset"><i class="bi bi-arrow-counterclockwise"></i></a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Applications Table -->
+<div class="card border-0 shadow-sm">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle hrms-leave-datatable w-100">
+                <thead>
+                    <tr>
+                        <th>Employee</th>
+                        <th>Department</th>
+                        <th>Leave Type</th>
+                        <th>Dates</th>
+                        <th>Days</th>
+                        <th>Reason</th>
+                        <th>Attachment</th>
+                        <th>Status</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var app in Model.Applications)
+                    {
+                        var badge = app.ApprovalStatus switch
+                        {
+                            "Approved" => "bg-success-subtle text-success-emphasis",
+                            "Rejected" => "bg-danger-subtle text-danger-emphasis",
+                            "Cancelled" => "bg-secondary-subtle text-secondary-emphasis",
+                            _ => "bg-warning-subtle text-warning-emphasis"
+                        };
+                        var canCancel = (app.ApprovalStatus == "Pending" || app.ApprovalStatus == "Approved")
+                            && (canManage || Model.CurrentUserEmployeeId == app.EmployeeId);
+                        <tr>
+                            <td>
+                                <div class="fw-semibold">@app.FullName</div>
+                                <div class="small text-body-secondary">@app.EmployeeCode &bull; @app.BranchName</div>
+                            </td>
+                            <td>@app.DepartmentName</td>
+                            <td>
+                                <span class="badge text-white" style="background-color: @app.ColorHex">@app.LeaveCode</span>
+                                <span class="small fw-medium ms-1">@app.LeaveName</span>
+                            </td>
+                            <td class="text-nowrap small">
+                                <div>@app.StartDate.ToString("dd MMM yyyy")</div>
+                                @if (app.EndDate.Date != app.StartDate.Date)
+                                {
+                                    <div class="text-body-secondary">to @app.EndDate.ToString("dd MMM yyyy")</div>
+                                }
+                                @if (app.IsHalfDay)
+                                {
+                                    <span class="badge bg-info-subtle text-info-emphasis">Half Day (@(app.HalfDaySession ?? "FirstHalf"))</span>
+                                }
+                            </td>
+                            <td class="fw-semibold">@app.TotalDays.ToString("0.##")</td>
+                            <td class="small" style="max-width: 240px;">
+                                <div class="text-truncate" title="@app.Reason">@app.Reason</div>
+                                @if (!string.IsNullOrWhiteSpace(app.ReviewerComments))
+                                {
+                                    <div class="text-body-secondary text-truncate" title="@app.ReviewerComments">Note: @app.ReviewerComments</div>
+                                }
+                            </td>
+                            <td>
+                                @if (!string.IsNullOrWhiteSpace(app.AttachmentStoredName))
+                                {
+                                    <a asp-action="DownloadAttachment" asp-route-id="@app.LeaveApplicationId" class="btn btn-sm btn-outline-secondary">
+                                        <i class="bi bi-paperclip me-1"></i>Download
+                                    </a>
+                                }
+                                else
+                                {
+                                    <span class="small text-body-secondary">-</span>
+                                }
+                            </td>
+                            <td>
+                                <span class="badge @badge">@app.ApprovalStatus</span>
+                                @if (!string.IsNullOrWhiteSpace(app.ApprovedByName))
+                                {
+                                    <div class="text-body-secondary" style="font-size: 0.72rem;">by @app.ApprovedByName</div>
+                                }
+                            </td>
+                            <td class="text-end text-nowrap">
+                                @if (canManage && app.ApprovalStatus == "Pending")
+                                {
+                                    <button type="button" class="btn btn-sm btn-outline-success" title="Approve"
+                                            onclick='HrmsLeave.reviewApplication(@app.LeaveApplicationId, "Approved", @Html.Raw(System.Text.Json.JsonSerializer.Serialize(app.FullName)))'>
+                                        <i class="bi bi-check-lg"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-danger" title="Reject"
+                                            onclick='HrmsLeave.reviewApplication(@app.LeaveApplicationId, "Rejected", @Html.Raw(System.Text.Json.JsonSerializer.Serialize(app.FullName)))'>
+                                        <i class="bi bi-x-lg"></i>
+                                    </button>
+                                }
+                                @if (canCancel)
+                                {
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" title="Cancel Leave"
+                                            onclick='HrmsLeave.cancelApplication(@app.LeaveApplicationId, @Html.Raw(System.Text.Json.JsonSerializer.Serialize(app.FullName)))'>
+                                        <i class="bi bi-slash-circle"></i>
+                                    </button>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Apply Leave Modal -->
+@if (canManage || Model.CurrentUserEmployeeId.HasValue)
+{
+    <div class="modal fade" id="applyLeaveModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-calendar2-plus me-2 text-primary"></i>Submit Leave Application</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="applyLeaveForm" enctype="multipart/form-data" onsubmit="event.preventDefault(); HrmsLeave.submitMultipartForm('#applyLeaveForm', '@Url.Action("Apply")', '#applyLeaveModal');">
+                    @Html.AntiForgeryToken()
+                    <div class="modal-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label small fw-semibold">Employee</label>
+                                @if (canManage)
+                                {
+                                    <select name="EmployeeId" class="form-select" required>
+                                        <option value="">Select Employee...</option>
+                                        @foreach (var emp in Model.Employees)
+                                        {
+                                            <option value="@emp.EmployeeId" selected="@(Model.CurrentUserEmployeeId == emp.EmployeeId)">@emp.EmployeeCode - @emp.FullName</option>
+                                        }
+                                    </select>
+                                }
+                                else
+                                {
+                                    <input type="hidden" name="EmployeeId" value="@Model.CurrentUserEmployeeId" />
+                                    <input type="text" class="form-control" value="@User.GetFullName()" readonly />
+                                }
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-semibold">Leave Type</label>
+                                <select name="LeaveTypeId" class="form-select" required>
+                                    <option value="">Select Leave Policy...</option>
+                                    @foreach (var lt in Model.LeaveTypes.Where(x => x.IsActive))
+                                    {
+                                        <option value="@lt.LeaveTypeId">
+                                            @lt.LeaveName (@lt.LeaveCode) - @(lt.AnnualQuota > 0 ? $"{lt.AnnualQuota} days/yr" : "As needed") @(lt.RequiresDocument ? "[Doc Required]" : "")
+                                        </option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small fw-semibold">Start Date</label>
+                                <input id="leaveStartDate" type="date" name="StartDate" class="form-control" value="@DateTime.Today.ToString("yyyy-MM-dd")" required />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small fw-semibold">End Date</label>
+                                <input id="leaveEndDate" type="date" name="EndDate" class="form-control" value="@DateTime.Today.ToString("yyyy-MM-dd")" required />
+                            </div>
+                            <div class="col-md-4 d-flex align-items-end">
+                                <div class="form-check form-switch mb-2">
+                                    <input id="chkHalfDay" class="form-check-input" type="checkbox" name="IsHalfDay" value="true" />
+                                    <input type="hidden" name="IsHalfDay" value="false" />
+                                    <label class="form-check-label small fw-semibold" for="chkHalfDay">Half-Day Leave</label>
+                                </div>
+                            </div>
+                            <div id="halfDaySessionWrap" class="col-md-6 d-none">
+                                <label class="form-label small fw-semibold">Half-Day Session</label>
+                                <select name="HalfDaySession" class="form-select">
+                                    <option value="FirstHalf">First Half (Morning)</option>
+                                    <option value="SecondHalf">Second Half (Afternoon)</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-semibold">Emergency Contact During Leave</label>
+                                <input type="text" name="ContactDuringLeave" class="form-control" maxlength="60" placeholder="Phone number or alternate contact" />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-semibold">Supporting Document (PDF/JPG/PNG, max 5 MB)</label>
+                                <input type="file" name="attachmentFile" class="form-control" accept=".pdf,.png,.jpg,.jpeg,.doc,.docx" />
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label small fw-semibold">Reason</label>
+                                <textarea name="Reason" class="form-control" rows="3" maxlength="500" required placeholder="State reason for leave request..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Submit Application</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <script src="~/js/leave.js" asp-append-version="true"></script>
+}

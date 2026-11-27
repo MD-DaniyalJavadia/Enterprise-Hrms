@@ -1,0 +1,224 @@
+@using System.Text.Json
+@model EmployeeVaultPageViewModel
+@{
+    ViewData["Title"] = Model.CanManage ? "Employee Document Vault & Expiry Tracker" : "My Personal Documents";
+    ViewData["BreadcrumbParent"] = "Assets & Documents";
+}
+
+@section PageActions {
+    <div class="d-flex flex-wrap gap-2">
+        <a asp-action="Index" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-folder2-open me-1"></i>Policy Repository
+        </a>
+        @if (Model.CanManage)
+        {
+            <button type="button" class="btn btn-primary btn-sm"
+                    onclick="new bootstrap.Modal(document.getElementById('uploadVaultModal')).show()">
+                <i class="bi bi-upload me-1"></i>Upload Employee Doc
+            </button>
+        }
+    </div>
+}
+
+<!-- Expiry Summary Strip -->
+<div class="row g-3 mb-3">
+    <div class="col-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body py-3">
+                <div class="small text-danger fw-semibold">Expired Documents</div>
+                <div class="fs-4 fw-bold text-danger">@Model.ExpiredCount</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body py-3">
+                <div class="small text-warning fw-semibold">Expiring &le; 30 Days</div>
+                <div class="fs-4 fw-bold text-warning">@Model.ExpiringSoonCount</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body py-3">
+                <div class="small text-success fw-semibold">Valid / Active</div>
+                <div class="fs-4 fw-bold text-success">@Model.ValidCount</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filter Strip -->
+<div class="card border-0 shadow-sm mb-3">
+    <div class="card-body py-3">
+        <form method="get" class="row g-2 align-items-end">
+            @if (Model.CanManage)
+            {
+                <div class="col-md-4">
+                    <label class="form-label small fw-semibold">Employee</label>
+                    <select name="employeeId" class="form-select form-select-sm hrms-select2">
+                        <option value="">All Employees</option>
+                        @foreach (var emp in Model.Employees)
+                        {
+                            <option value="@emp.EmployeeId" selected="@(Model.EmployeeId == emp.EmployeeId)">@emp.FullName (@emp.EmployeeCode)</option>
+                        }
+                    </select>
+                </div>
+            }
+            <div class="col-md-3">
+                <label class="form-label small fw-semibold">Document Type</label>
+                <select name="documentType" class="form-select form-select-sm">
+                    <option value="">All Types</option>
+                    @foreach (var dt in new[] { "Contract", "IDProof", "Resume", "Certificate", "OfferLetter", "VisaPermit", "Other" })
+                    {
+                        <option value="@dt" selected="@(string.Equals(Model.DocumentType, dt, StringComparison.OrdinalIgnoreCase))">@dt</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small fw-semibold">Expiry Status</label>
+                <select name="expiryFilter" class="form-select form-select-sm">
+                    <option value="All" selected="@(string.IsNullOrEmpty(Model.ExpiryFilter) || Model.ExpiryFilter == "All")">All</option>
+                    <option value="Expired" selected="@(Model.ExpiryFilter == "Expired")">Expired</option>
+                    <option value="ExpiringSoon" selected="@(Model.ExpiryFilter == "ExpiringSoon")">Expiring Within 30 Days</option>
+                    <option value="Valid" selected="@(Model.ExpiryFilter == "Valid")">Valid / No Expiry</option>
+                </select>
+            </div>
+            <div class="col-md-2 d-flex gap-2">
+                <button type="submit" class="btn btn-primary btn-sm flex-fill"><i class="bi bi-funnel me-1"></i>Filter</button>
+                <a asp-action="EmployeeVault" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-counterclockwise"></i></a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle hrms-ad-datatable w-100">
+                <thead>
+                    <tr>
+                        <th>Document Title</th>
+                        <th>Employee</th>
+                        <th>Type</th>
+                        <th>Uploaded</th>
+                        <th>Expiry Date</th>
+                        <th>Health</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var doc in Model.Documents)
+                    {
+                        var expBadge = doc.ExpiryStatus switch
+                        {
+                            "Expired" => "bg-danger-subtle text-danger-emphasis",
+                            "ExpiringSoon" => "bg-warning-subtle text-warning-emphasis",
+                            "Valid" => "bg-success-subtle text-success-emphasis",
+                            _ => "bg-secondary-subtle text-secondary-emphasis"
+                        };
+                        <tr>
+                            <td>
+                                <div class="fw-semibold">@doc.DocumentTitle</div>
+                                <div class="small text-body-secondary">@doc.OriginalFileName (@((doc.FileSizeBytes / 1024.0).ToString("0.0")) KB)</div>
+                            </td>
+                            <td class="small">
+                                <div class="fw-semibold">@doc.EmployeeName</div>
+                                <div class="text-body-secondary">@doc.EmployeeCode &bull; @doc.DepartmentName</div>
+                            </td>
+                            <td><span class="badge bg-info-subtle text-info-emphasis">@doc.DocumentType</span></td>
+                            <td class="small">@doc.CreatedDate.ToString("dd MMM yyyy")</td>
+                            <td class="small">@(doc.ExpiryDate?.ToString("dd MMM yyyy") ?? "No Expiry")</td>
+                            <td>
+                                <span class="badge @expBadge">
+                                    @doc.ExpiryStatus
+                                    @if (doc.DaysUntilExpiry.HasValue && doc.ExpiryStatus != "NoExpiry")
+                                    {
+                                        <span>(@(doc.DaysUntilExpiry.Value < 0 ? $"{Math.Abs(doc.DaysUntilExpiry.Value)}d ago" : $"in {doc.DaysUntilExpiry.Value}d"))</span>
+                                    }
+                                </span>
+                            </td>
+                            <td class="text-end text-nowrap">
+                                <a asp-action="DownloadEmployeeDocument" asp-route-id="@doc.DocumentId" class="btn btn-sm btn-outline-primary" title="Download">
+                                    <i class="bi bi-download"></i>
+                                </a>
+                                @if (Model.CanManage)
+                                {
+                                    <button type="button" class="btn btn-sm btn-outline-danger" title="Remove"
+                                            onclick='HrmsAssetDoc.deleteEmployeeVaultDoc(@doc.DocumentId, @Html.Raw(JsonSerializer.Serialize(doc.DocumentTitle)))'>
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@if (Model.CanManage)
+{
+    <div class="modal fade" id="uploadVaultModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-upload me-2 text-primary"></i>Upload Employee Document</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="uploadVaultForm" enctype="multipart/form-data"
+                      onsubmit="event.preventDefault(); HrmsAssetDoc.submitMultipartForm('#uploadVaultForm', '@Url.Action("UploadEmployeeDocument")', '#uploadVaultModal');">
+                    @Html.AntiForgeryToken()
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold">Employee <span class="text-danger">*</span></label>
+                            <select name="EmployeeId" class="form-select" required>
+                                <option value="">Select active employee...</option>
+                                @foreach (var emp in Model.Employees)
+                                {
+                                    <option value="@emp.EmployeeId">@emp.FullName (@emp.EmployeeCode)</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="row g-2 mb-3">
+                            <div class="col-6">
+                                <label class="form-label small fw-semibold">Document Type</label>
+                                <select name="DocumentType" class="form-select">
+                                    <option value="Contract">Contract</option>
+                                    <option value="IDProof">IDProof</option>
+                                    <option value="VisaPermit">VisaPermit</option>
+                                    <option value="Certificate">Certificate</option>
+                                    <option value="OfferLetter">OfferLetter</option>
+                                    <option value="Resume">Resume</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label small fw-semibold">Expiry Date</label>
+                                <input type="date" name="ExpiryDate" class="form-control" />
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold">Document Title <span class="text-danger">*</span></label>
+                            <input type="text" name="DocumentTitle" class="form-control" maxlength="150" required />
+                        </div>
+                        <div>
+                            <label class="form-label small fw-semibold">File <span class="text-danger">*</span></label>
+                            <input type="file" name="documentFile" class="form-control" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" required />
+                            <div class="form-text">Allowed: .pdf, .doc, .docx, .jpg, .jpeg, .png (max 10 MB).</div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Upload to Vault</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <script src="~/js/asset-document.js" asp-append-version="true"></script>
+}

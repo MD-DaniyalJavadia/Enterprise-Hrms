@@ -1,0 +1,267 @@
+@using System.Text.Json
+@model InterviewsPageViewModel
+@{
+    ViewData["Title"] = "Interviews & Scorecards";
+    ViewData["BreadcrumbParent"] = "Recruitment";
+    var canManage = User.HasPermission("RECRUITMENT.MANAGE");
+    var camelOpts = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+}
+
+@section PageActions {
+    <div class="d-flex flex-wrap gap-2">
+        <a asp-action="Pipeline" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-kanban me-1"></i>Applicant Pipeline
+        </a>
+        @if (canManage)
+        {
+            <button type="button" class="btn btn-primary btn-sm" onclick="HrmsRec.openInterviewModal()">
+                <i class="bi bi-calendar-plus me-1"></i>Schedule Interview
+            </button>
+        }
+    </div>
+}
+
+<!-- Filter Strip -->
+<div class="card border-0 shadow-sm mb-3">
+    <div class="card-body py-3">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label small fw-semibold">Interview Status</label>
+                <select name="status" class="form-select form-select-sm">
+                    <option value="">All Statuses</option>
+                    @foreach (var st in new[] { "Scheduled", "Completed", "NoShow", "Cancelled" })
+                    {
+                        <option value="@st" selected="@(string.Equals(Model.InterviewStatus, st, StringComparison.OrdinalIgnoreCase))">@st</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-2 d-flex gap-2">
+                <button type="submit" class="btn btn-primary btn-sm flex-fill"><i class="bi bi-funnel me-1"></i>Filter</button>
+                <a asp-action="Interviews" class="btn btn-outline-secondary btn-sm" title="Reset"><i class="bi bi-arrow-counterclockwise"></i></a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Interviews Table -->
+<div class="card border-0 shadow-sm">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle hrms-rec-datatable w-100">
+                <thead>
+                    <tr>
+                        <th>Candidate &amp; Position</th>
+                        <th>Round &amp; Mode</th>
+                        <th>Schedule</th>
+                        <th>Interviewer</th>
+                        <th>Evaluation</th>
+                        <th>Status</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var iv in Model.Interviews)
+                    {
+                        var stBadge = iv.InterviewStatus switch
+                        {
+                            "Completed" => "bg-success-subtle text-success-emphasis",
+                            "Scheduled" => "bg-primary-subtle text-primary-emphasis",
+                            "NoShow" => "bg-warning-subtle text-warning-emphasis",
+                            _ => "bg-danger-subtle text-danger-emphasis"
+                        };
+                        var hasSafeLink = Uri.TryCreate(iv.LocationOrLink, UriKind.Absolute, out var locUri)
+                            && (locUri.Scheme == Uri.UriSchemeHttp || locUri.Scheme == Uri.UriSchemeHttps);
+                        <tr>
+                            <td>
+                                <div class="fw-semibold">@iv.CandidateName</div>
+                                <div class="small text-body-secondary">@iv.RequisitionCode &bull; @iv.JobTitle</div>
+                            </td>
+                            <td class="small">
+                                <div class="fw-medium">@iv.InterviewRound</div>
+                                <div class="text-body-secondary">
+                                    @iv.InterviewMode
+                                    @if (hasSafeLink && locUri is not null)
+                                    {
+                                        <span>&bull; <a href="@locUri.AbsoluteUri" target="_blank" rel="noopener noreferrer">Meeting Link</a></span>
+                                    }
+                                    else if (!string.IsNullOrWhiteSpace(iv.LocationOrLink))
+                                    {
+                                        <span>&bull; @iv.LocationOrLink</span>
+                                    }
+                                </div>
+                            </td>
+                            <td class="small">
+                                <div class="fw-medium">@iv.ScheduledStart.ToString("dd MMM yyyy, HH:mm")</div>
+                                <div class="text-body-secondary">@iv.DurationMinutes mins</div>
+                            </td>
+                            <td class="small">@(iv.InterviewerName ?? "Unassigned")</td>
+                            <td class="small">
+                                @if (!string.IsNullOrWhiteSpace(iv.OverallRecommendation))
+                                {
+                                    <span class="badge bg-info-subtle text-info-emphasis">@iv.OverallRecommendation</span>
+                                    <div class="text-body-secondary mt-1">Tech: @(iv.TechnicalScore?.ToString() ?? "-")/5 &bull; Comm: @(iv.CommunicationScore?.ToString() ?? "-")/5</div>
+                                }
+                                else
+                                {
+                                    <span class="text-body-secondary">Pending</span>
+                                }
+                            </td>
+                            <td><span class="badge @stBadge">@iv.InterviewStatus</span></td>
+                            <td class="text-end text-nowrap">
+                                @if (canManage)
+                                {
+                                    <button type="button" class="btn btn-sm btn-outline-primary" title="Reschedule"
+                                            onclick='HrmsRec.openInterviewModal(@Html.Raw(JsonSerializer.Serialize(iv, camelOpts)))'>
+                                        <i class="bi bi-calendar-event"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-success" title="Submit Scorecard / Feedback"
+                                            onclick='HrmsRec.openFeedbackModal(@Html.Raw(JsonSerializer.Serialize(iv, camelOpts)))'>
+                                        <i class="bi bi-clipboard-check me-1"></i>Scorecard
+                                    </button>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@if (canManage)
+{
+    <!-- Schedule Interview Modal -->
+    <div class="modal fade" id="interviewModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="ivModalTitle">Schedule Interview</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="interviewForm" onsubmit="event.preventDefault(); HrmsRec.submitAjaxForm('#interviewForm', '@Url.Action("ScheduleInterview")', '#interviewModal');">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" id="ivId" name="InterviewId" value="0" />
+                    <div class="modal-body">
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <label class="form-label small fw-semibold">Applicant <span class="text-danger">*</span></label>
+                                <select id="ivAppId" name="ApplicationId" class="form-select" required>
+                                    <option value="">Select Applicant</option>
+                                    @foreach (var app in Model.Applications)
+                                    {
+                                        <option value="@app.ApplicationId">@app.CandidateName — @app.RequisitionCode (@app.JobTitle) [@app.PipelineStage]</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-semibold">Interview Round <span class="text-danger">*</span></label>
+                                <select id="ivRound" name="InterviewRound" class="form-select" required>
+                                    <option value="HR Screening">HR Screening</option>
+                                    <option value="Technical Round">Technical Round</option>
+                                    <option value="System Design / Case Study">System Design / Case Study</option>
+                                    <option value="Hiring Manager Round">Hiring Manager Round</option>
+                                    <option value="Executive Panel">Executive Panel</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-semibold">Mode <span class="text-danger">*</span></label>
+                                <select id="ivMode" name="InterviewMode" class="form-select" required>
+                                    <option value="Video">Video</option>
+                                    <option value="In-Person">In-Person</option>
+                                    <option value="Phone">Phone</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-semibold">Start Date &amp; Time <span class="text-danger">*</span></label>
+                                <input type="datetime-local" id="ivStart" name="ScheduledStart" class="form-control" required />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-semibold">Duration (Minutes)</label>
+                                <input type="number" id="ivDuration" name="DurationMinutes" class="form-control" min="15" max="480" value="45" required />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-semibold">Interviewer</label>
+                                <select id="ivInterviewer" name="InterviewerEmployeeId" class="form-select">
+                                    <option value="">-- Select Interviewer --</option>
+                                    @foreach (var emp in Model.Employees)
+                                    {
+                                        <option value="@emp.EmployeeId">@emp.FullName (@emp.DepartmentName)</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-semibold">Meeting Link or Room Location</label>
+                                <input type="text" id="ivLocation" name="LocationOrLink" class="form-control" maxlength="250" placeholder="https://meet... or Room 3B" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Save Schedule</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Interview Feedback Modal -->
+    <div class="modal fade" id="feedbackModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-clipboard-check me-2 text-success"></i>Interview Scorecard</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="feedbackForm" onsubmit="event.preventDefault(); HrmsRec.submitAjaxForm('#feedbackForm', '@Url.Action("SubmitInterviewFeedback")', '#feedbackModal');">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" id="fbInterviewId" name="InterviewId" value="0" />
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <div class="small text-body-secondary">Session</div>
+                            <div class="fw-semibold" id="fbLabel"></div>
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label small fw-semibold">Session Outcome</label>
+                                <select id="fbStatus" name="InterviewStatus" class="form-select" required>
+                                    <option value="Completed">Completed</option>
+                                    <option value="NoShow">No Show</option>
+                                    <option value="Cancelled">Cancelled</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-semibold">Recommendation</label>
+                                <select id="fbRec" name="OverallRecommendation" class="form-select">
+                                    <option value="StrongHire">Strong Hire</option>
+                                    <option value="Hire">Hire</option>
+                                    <option value="Hold">Hold</option>
+                                    <option value="NoHire">No Hire</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-semibold">Technical Score (1 - 5)</label>
+                                <input type="number" id="fbTech" name="TechnicalScore" class="form-control" min="1" max="5" />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-semibold">Communication Score (1 - 5)</label>
+                                <input type="number" id="fbComm" name="CommunicationScore" class="form-control" min="1" max="5" />
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label small fw-semibold">Feedback Notes</label>
+                                <textarea id="fbNotes" name="FeedbackNotes" class="form-control" rows="3" maxlength="1000"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-success">Save Evaluation</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <script src="~/js/recruitment.js" asp-append-version="true"></script>
+}

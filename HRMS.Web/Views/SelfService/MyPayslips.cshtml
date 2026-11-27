@@ -1,0 +1,92 @@
+@model EssPayslipsPageViewModel
+@{
+    ViewData["Title"] = "My Payslips";
+    ViewData["BreadcrumbParent"] = "Self-Service Portal";
+}
+
+@if (!Model.HasEmployeeProfile)
+{
+    <div class="alert alert-info">No employee profile is linked to your account.</div>
+}
+else
+{
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body">
+            <form method="get" asp-action="MyPayslips" class="row g-3 align-items-end">
+                @if (Model.IsSuperAdminPreview && Model.PreviewEmployees.Any())
+                {
+                    <div class="col-md-4">
+                        <label class="form-label small">Employee</label>
+                        <select name="previewEmployeeId" class="form-select form-select-sm">
+                            @foreach (var emp in Model.PreviewEmployees)
+                            {
+                                <option value="@emp.EmployeeId" selected="@(Model.EmployeeId == emp.EmployeeId)">@emp.EmployeeCode - @emp.FullName</option>
+                            }
+                        </select>
+                    </div>
+                }
+                <div class="col-md-3">
+                    <label class="form-label small">Payroll Year</label>
+                    <select name="year" class="form-select form-select-sm">
+                        <option value="">All Years</option>
+                        @for (int y = DateTime.Today.Year; y >= DateTime.Today.Year - 4; y--)
+                        {
+                            <option value="@y" selected="@(Model.Year == y)">@y</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary btn-sm w-100">Filter</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle hrms-portal-datatable small">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Pay Period</th>
+                            <th>Pay Date</th>
+                            <th>Paid Days</th>
+                            <th class="text-end">Basic Pay</th>
+                            <th class="text-end">Allowances</th>
+                            <th class="text-end">Gross Pay</th>
+                            <th class="text-end">Deductions</th>
+                            <th class="text-end">Net Pay</th>
+                            <th>Status</th>
+                            <th class="text-end">Statement</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var p in Model.Payslips)
+                        {
+                            <tr>
+                                <td class="fw-semibold">@p.PeriodLabel</td>
+                                <td>@(p.PayDate?.ToString("dd MMM yyyy") ?? "-")</td>
+                                <td>@p.PaidDays.ToString("0.#") / @p.WorkingDaysInMonth.ToString("0.#")</td>
+                                <td class="text-end">@p.BasicPay.ToString("N2")</td>
+                                <td class="text-end">@p.TotalAllowances.ToString("N2")</td>
+                                <td class="text-end">@p.GrossPay.ToString("N2")</td>
+                                <td class="text-end text-danger">@p.TotalDeductions.ToString("N2")</td>
+                                <td class="text-end fw-bold text-primary">@p.NetPay.ToString("N2") @p.CurrencyCode</td>
+                                <td><span class="badge bg-info-subtle text-info-emphasis">@p.PaymentStatus</span></td>
+                                <td class="text-end">
+                                    <a asp-action="ViewPayslip" asp-route-id="@p.PayslipId" class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-file-earmark-text me-1"></i>View / Print
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <script src="~/js/portal.js" asp-append-version="true"></script>
+}

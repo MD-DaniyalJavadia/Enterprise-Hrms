@@ -1,0 +1,227 @@
+@model PositionsAndGradesPageViewModel
+@{
+    ViewData["Title"] = "Job Grades & Positions";
+    ViewData["BreadcrumbParent"] = "Organization";
+}
+
+<ul class="nav nav-tabs mb-4" role="tablist">
+    <li class="nav-item">
+        <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tabPositions" type="button">
+            <i class="bi bi-briefcase me-1"></i>Job Positions (@Model.JobPositions.Count)
+        </button>
+    </li>
+    <li class="nav-item">
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabGrades" type="button">
+            <i class="bi bi-layers me-1"></i>Job Grades (@Model.JobGrades.Count)
+        </button>
+    </li>
+</ul>
+
+<div class="tab-content">
+    <div class="tab-pane fade show active" id="tabPositions">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-transparent border-bottom py-3 d-flex justify-content-between align-items-center">
+                <h2 class="h6 fw-bold mb-0">Job Positions</h2>
+                @if (User.HasPermission("ORG.MANAGE"))
+                {
+                    <button type="button" class="btn btn-primary btn-sm" onclick="openPositionModal()"><i class="bi bi-plus-lg me-1"></i>Add Position</button>
+                }
+            </div>
+            <div class="card-body">
+                <table class="table table-hover align-middle hrms-datatable w-100">
+                    <thead>
+                        <tr><th>Code</th><th>Position Title</th><th>Department</th><th>Designation</th><th>Grade</th><th>Budget</th><th>Status</th><th class="text-end">Actions</th></tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var p in Model.JobPositions)
+                        {
+                            <tr>
+                                <td class="fw-semibold">@p.PositionCode</td>
+                                <td>
+                                    <div class="fw-semibold">@p.PositionTitle</div>
+                                    @if (!string.IsNullOrEmpty(p.ReportsToPositionTitle))
+                                    {
+                                        <small class="text-body-secondary">Reports to: @p.ReportsToPositionTitle</small>
+                                    }
+                                </td>
+                                <td>@p.DepartmentName</td>
+                                <td>@p.DesignationTitle</td>
+                                <td>@(p.GradeCode ?? "-")</td>
+                                <td>@p.HeadcountBudget</td>
+                                <td><span class="badge @(p.IsActive ? "bg-success-subtle text-success-emphasis" : "bg-danger-subtle text-danger-emphasis")">@(p.IsActive ? "Active" : "Inactive")</span></td>
+                                <td class="text-end text-nowrap">
+                                    @if (User.HasPermission("ORG.MANAGE"))
+                                    {
+                                        <button type="button" class="btn btn-sm btn-outline-primary" onclick='editPosition(@Html.Raw(System.Text.Json.JsonSerializer.Serialize(p)))'><i class="bi bi-pencil"></i></button>
+                                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="HrmsOrg.confirmDelete('@Url.Action("DeleteJobPosition", new { id = p.JobPositionId })', 'Job Position')"><i class="bi bi-trash"></i></button>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="tab-pane fade" id="tabGrades">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-transparent border-bottom py-3 d-flex justify-content-between align-items-center">
+                <h2 class="h6 fw-bold mb-0">Job Grades &amp; Salary Bands</h2>
+                @if (User.HasPermission("ORG.MANAGE"))
+                {
+                    <button type="button" class="btn btn-primary btn-sm" onclick="openGradeModal()"><i class="bi bi-plus-lg me-1"></i>Add Grade</button>
+                }
+            </div>
+            <div class="card-body">
+                <table class="table table-hover align-middle hrms-datatable w-100">
+                    <thead>
+                        <tr><th>Code</th><th>Grade Name</th><th>Level</th><th>Min Salary</th><th>Max Salary</th><th>Status</th><th class="text-end">Actions</th></tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var g in Model.JobGrades)
+                        {
+                            <tr>
+                                <td class="fw-semibold">@g.GradeCode</td>
+                                <td class="fw-semibold">@g.GradeName</td>
+                                <td>@g.LevelOrder</td>
+                                <td>@g.MinSalary.ToString("C0")</td>
+                                <td>@g.MaxSalary.ToString("C0")</td>
+                                <td><span class="badge @(g.IsActive ? "bg-success-subtle text-success-emphasis" : "bg-danger-subtle text-danger-emphasis")">@(g.IsActive ? "Active" : "Inactive")</span></td>
+                                <td class="text-end text-nowrap">
+                                    @if (User.HasPermission("ORG.MANAGE"))
+                                    {
+                                        <button type="button" class="btn btn-sm btn-outline-primary" onclick='editGrade(@Html.Raw(System.Text.Json.JsonSerializer.Serialize(g)))'><i class="bi bi-pencil"></i></button>
+                                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="HrmsOrg.confirmDelete('@Url.Action("DeleteJobGrade", new { id = g.JobGradeId })', 'Job Grade')"><i class="bi bi-trash"></i></button>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Job Position Modal -->
+<div class="modal fade" id="positionModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form id="positionForm">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="JobPositionId" id="posId" value="0" />
+                <div class="modal-header"><h5 class="modal-title" id="positionModalTitle">Job Position</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+                <div class="modal-body row g-3">
+                    <div class="col-md-4"><label class="form-label small fw-semibold">Code *</label><input type="text" name="PositionCode" id="posCode" class="form-control" required /></div>
+                    <div class="col-md-8"><label class="form-label small fw-semibold">Position Title *</label><input type="text" name="PositionTitle" id="posTitle" class="form-control" required /></div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Department *</label>
+                        <select name="DepartmentId" id="posDept" class="form-select" required>
+                            @foreach (var d in Model.Departments) { <option value="@d.DepartmentId">@d.DepartmentName</option> }
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Designation *</label>
+                        <select name="DesignationId" id="posDesig" class="form-select" required>
+                            @foreach (var des in Model.Designations) { <option value="@des.DesignationId">@des.DesignationTitle</option> }
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label small fw-semibold">Job Grade</label>
+                        <select name="JobGradeId" id="posGrade" class="form-select">
+                            <option value="">None</option>
+                            @foreach (var g in Model.JobGrades) { <option value="@g.JobGradeId">@g.GradeCode - @g.GradeName</option> }
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label small fw-semibold">Reports To</label>
+                        <select name="ReportsToPositionId" id="posReportsTo" class="form-select">
+                            <option value="">None</option>
+                            @foreach (var p in Model.JobPositions) { <option value="@p.JobPositionId">@p.PositionTitle</option> }
+                        </select>
+                    </div>
+                    <div class="col-md-4"><label class="form-label small fw-semibold">Headcount Budget</label><input type="number" name="HeadcountBudget" id="posBudget" class="form-control" value="1" min="1" /></div>
+                    <div class="col-12"><label class="form-label small fw-semibold">Description</label><textarea name="Description" id="posDesc" class="form-control" rows="2"></textarea></div>
+                    <div class="col-12"><div class="form-check form-switch"><input type="checkbox" name="IsActive" id="posActive" value="true" class="form-check-input" checked /><label class="form-check-label small" for="posActive">Active</label></div></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="HrmsOrg.submitAjaxForm('#positionForm', '@Url.Action("SaveJobPosition")', '#positionModal')">Save Position</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Job Grade Modal -->
+<div class="modal fade" id="gradeModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="gradeForm">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="JobGradeId" id="gradeId" value="0" />
+                <div class="modal-header"><h5 class="modal-title" id="gradeModalTitle">Job Grade</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+                <div class="modal-body row g-3">
+                    <div class="col-md-4"><label class="form-label small fw-semibold">Code *</label><input type="text" name="GradeCode" id="gradeCode" class="form-control" required /></div>
+                    <div class="col-md-8"><label class="form-label small fw-semibold">Grade Name *</label><input type="text" name="GradeName" id="gradeName" class="form-control" required /></div>
+                    <div class="col-md-4"><label class="form-label small fw-semibold">Level Order</label><input type="number" name="LevelOrder" id="gradeLevel" class="form-control" value="1" min="1" /></div>
+                    <div class="col-md-4"><label class="form-label small fw-semibold">Min Salary</label><input type="number" step="0.01" name="MinSalary" id="gradeMin" class="form-control" value="0" /></div>
+                    <div class="col-md-4"><label class="form-label small fw-semibold">Max Salary</label><input type="number" step="0.01" name="MaxSalary" id="gradeMax" class="form-control" value="0" /></div>
+                    <div class="col-12"><label class="form-label small fw-semibold">Description</label><textarea name="Description" id="gradeDesc" class="form-control" rows="2"></textarea></div>
+                    <div class="col-12"><div class="form-check form-switch"><input type="checkbox" name="IsActive" id="gradeActive" value="true" class="form-check-input" checked /><label class="form-check-label small" for="gradeActive">Active</label></div></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="HrmsOrg.submitAjaxForm('#gradeForm', '@Url.Action("SaveJobGrade")', '#gradeModal')">Save Grade</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/organization.js" asp-append-version="true"></script>
+    <script>
+        function openPositionModal() {
+            $('#positionForm')[0].reset();
+            $('#posId').val(0);
+            $('#posActive').prop('checked', true);
+            $('#positionModalTitle').text('New Job Position');
+            new bootstrap.Modal(document.getElementById('positionModal')).show();
+        }
+        function editPosition(p) {
+            $('#posId').val(p.JobPositionId);
+            $('#posCode').val(p.PositionCode);
+            $('#posTitle').val(p.PositionTitle);
+            $('#posDept').val(p.DepartmentId);
+            $('#posDesig').val(p.DesignationId);
+            $('#posGrade').val(p.JobGradeId || '');
+            $('#posReportsTo').val(p.ReportsToPositionId || '');
+            $('#posBudget').val(p.HeadcountBudget);
+            $('#posDesc').val(p.Description || '');
+            $('#posActive').prop('checked', p.IsActive);
+            $('#positionModalTitle').text('Edit Job Position');
+            new bootstrap.Modal(document.getElementById('positionModal')).show();
+        }
+        function openGradeModal() {
+            $('#gradeForm')[0].reset();
+            $('#gradeId').val(0);
+            $('#gradeActive').prop('checked', true);
+            $('#gradeModalTitle').text('New Job Grade');
+            new bootstrap.Modal(document.getElementById('gradeModal')).show();
+        }
+        function editGrade(g) {
+            $('#gradeId').val(g.JobGradeId);
+            $('#gradeCode').val(g.GradeCode);
+            $('#gradeName').val(g.GradeName);
+            $('#gradeLevel').val(g.LevelOrder);
+            $('#gradeMin').val(g.MinSalary);
+            $('#gradeMax').val(g.MaxSalary);
+            $('#gradeDesc').val(g.Description || '');
+            $('#gradeActive').prop('checked', g.IsActive);
+            $('#gradeModalTitle').text('Edit Job Grade');
+            new bootstrap.Modal(document.getElementById('gradeModal')).show();
+        }
+    </script>
+}

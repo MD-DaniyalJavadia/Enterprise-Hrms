@@ -1,0 +1,71 @@
+@model DepartmentFormViewModel
+@{
+    var isEdit = Model.DepartmentId > 0;
+}
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-transparent border-bottom py-3">
+        <h2 class="h6 fw-bold mb-0"><i class="bi bi-diagram-2 me-2 text-primary"></i>@(isEdit ? $"Edit Department: {Model.DepartmentName}" : "New Department")</h2>
+    </div>
+    <div class="card-body p-4">
+        <form asp-action="@(isEdit ? "Edit" : "Create")" method="post" novalidate>
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="DepartmentId" />
+            <input type="hidden" asp-for="CompanyId" />
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger small py-2"></div>
+
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label asp-for="DepartmentCode" class="form-label small fw-semibold"></label>
+                    <input asp-for="DepartmentCode" class="form-control" placeholder="e.g. ENG" />
+                    <span asp-validation-for="DepartmentCode" class="text-danger small"></span>
+                </div>
+                <div class="col-md-8">
+                    <label asp-for="DepartmentName" class="form-label small fw-semibold"></label>
+                    <input asp-for="DepartmentName" class="form-control" />
+                    <span asp-validation-for="DepartmentName" class="text-danger small"></span>
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="BranchId" class="form-label small fw-semibold"></label>
+                    <select asp-for="BranchId" class="form-select hrms-select2">
+                        <option value="">Company-Wide / All Branches</option>
+                        @foreach (var b in Model.AvailableBranches)
+                        {
+                            <option value="@b.BranchId">@b.BranchName</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="ParentDepartmentId" class="form-label small fw-semibold"></label>
+                    <select asp-for="ParentDepartmentId" class="form-select hrms-select2">
+                        <option value="">None (Top-Level Department)</option>
+                        @foreach (var d in Model.AvailableParentDepartments)
+                        {
+                            <option value="@d.DepartmentId">@d.DepartmentName (@d.DepartmentCode)</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="CostCenterCode" class="form-label small fw-semibold"></label>
+                    <select asp-for="CostCenterCode" class="form-select hrms-select2">
+                        <option value="">Select Cost Center</option>
+                        @foreach (var cc in Model.AvailableCostCenters)
+                        {
+                            <option value="@cc.CostCenterCode">@cc.CostCenterCode - @cc.CostCenterName</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-12">
+                    <div class="form-check form-switch">
+                        <input asp-for="IsActive" class="form-check-input" />
+                        <label asp-for="IsActive" class="form-check-label small fw-semibold"></label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-end gap-2 mt-4">
+                <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
+                <button type="submit" class="btn btn-primary"><i class="bi bi-check2-circle me-1"></i>@(isEdit ? "Update Department" : "Save Department")</button>
+            </div>
+        </form>
+    </div>
+</div>

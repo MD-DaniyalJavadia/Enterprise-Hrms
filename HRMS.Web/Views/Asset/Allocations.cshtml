@@ -1,0 +1,252 @@
+@using System.Text.Json
+@model AssetAllocationsPageViewModel
+@{
+    ViewData["Title"] = Model.CanManage ? "Asset Custody & Allocations" : "My Asset Custody History";
+    ViewData["BreadcrumbParent"] = "Assets & Documents";
+    var currentEmployeeId = User.GetEmployeeId();
+}
+
+@section PageActions {
+    <div class="d-flex flex-wrap gap-2">
+        <a asp-action="Index" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-laptop me-1"></i>Asset Inventory
+        </a>
+        @if (Model.CanManage && Model.AvailableAssets.Any())
+        {
+            <button type="button" class="btn btn-primary btn-sm"
+                    onclick="new bootstrap.Modal(document.getElementById('assignFromListModal')).show()">
+                <i class="bi bi-person-plus me-1"></i>New Assignment
+            </button>
+        }
+    </div>
+}
+
+<div class="card border-0 shadow-sm mb-3">
+    <div class="card-body py-3">
+        <form method="get" class="row g-2 align-items-end">
+            @if (Model.CanManage)
+            {
+                <div class="col-md-4">
+                    <label class="form-label small fw-semibold">Employee</label>
+                    <select name="employeeId" class="form-select form-select-sm hrms-select2">
+                        <option value="">All Employees</option>
+                        @foreach (var emp in Model.Employees)
+                        {
+                            <option value="@emp.EmployeeId" selected="@(Model.EmployeeId == emp.EmployeeId)">@emp.FullName (@emp.EmployeeCode)</option>
+                        }
+                    </select>
+                </div>
+            }
+            <div class="col-md-3">
+                <label class="form-label small fw-semibold">Allocation Status</label>
+                <select name="status" class="form-select form-select-sm">
+                    <option value="">All Statuses</option>
+                    @foreach (var st in new[] { "Active", "Returned", "Damaged", "Lost" })
+                    {
+                        <option value="@st" selected="@(string.Equals(Model.Status, st, StringComparison.OrdinalIgnoreCase))">@st</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-3 d-flex gap-2">
+                <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-funnel me-1"></i>Filter</button>
+                <a asp-action="Allocations" class="btn btn-outline-secondary btn-sm">Reset</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle hrms-ad-datatable w-100">
+                <thead>
+                    <tr>
+                        <th>Asset</th>
+                        <th>Custodian</th>
+                        <th>Assigned / Due</th>
+                        <th>Returned</th>
+                        <th>Condition</th>
+                        <th>Sign-Off</th>
+                        <th>Status</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var al in Model.Allocations)
+                    {
+                        var badge = al.AllocationStatus switch
+                        {
+                            "Active" => "bg-primary-subtle text-primary-emphasis",
+                            "Returned" => "bg-success-subtle text-success-emphasis",
+                            _ => "bg-danger-subtle text-danger-emphasis"
+                        };
+                        <tr>
+                            <td>
+                                <a asp-action="Details" asp-route-id="@al.AssetId" class="fw-semibold text-decoration-none">@al.AssetName</a>
+                                <div class="small text-body-secondary font-monospace">@al.AssetTag &bull; @al.CategoryName</div>
+                            </td>
+                            <td class="small">
+                                <div class="fw-semibold">@al.EmployeeName</div>
+                                <div class="text-body-secondary">@al.EmployeeCode &bull; @al.DepartmentName</div>
+                            </td>
+                            <td class="small">
+                                <div>@al.AssignedDate.ToString("dd MMM yyyy")</div>
+                                @if (al.ExpectedReturnDate.HasValue)
+                                {
+                                    <div class="text-body-secondary">Due: @al.ExpectedReturnDate.Value.ToString("dd MMM yyyy")</div>
+                                }
+                            </td>
+                            <td class="small">@(al.ReturnedDate?.ToString("dd MMM yyyy") ?? "-")</td>
+                            <td class="small">@al.ConditionAtIssue @(al.ConditionAtReturn != null ? $"→ {al.ConditionAtReturn}" : "")</td>
+                            <td>
+                                @if (al.EmployeeAcknowledged)
+                                {
+                                    <span class="badge bg-success-subtle text-success-emphasis">Signed</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-warning-subtle text-warning-emphasis">Pending</span>
+                                }
+                            </td>
+                            <td><span class="badge @badge">@al.AllocationStatus</span></td>
+                            <td class="text-end text-nowrap">
+                                @if (al.AllocationStatus == "Active" && !al.EmployeeAcknowledged && currentEmployeeId == al.EmployeeId)
+                                {
+                                    <button type="button" class="btn btn-sm btn-outline-success"
+                                            onclick='HrmsAssetDoc.acknowledgeAllocation(@al.AllocationId, @Html.Raw(JsonSerializer.Serialize(al.AssetName)))'>
+                                        <i class="bi bi-check2-circle me-1"></i>Confirm
+                                    </button>
+                                }
+                                @if (Model.CanManage && al.AllocationStatus == "Active")
+                                {
+                                    <button type="button" class="btn btn-sm btn-outline-warning"
+                                            onclick='HrmsAssetDoc.openReturnModal(@al.AllocationId, @Html.Raw(JsonSerializer.Serialize($"{al.AssetTag} — {al.AssetName}")), @Html.Raw(JsonSerializer.Serialize(al.EmployeeName)))'>
+                                        <i class="bi bi-box-arrow-in-left me-1"></i>Return
+                                    </button>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@if (Model.CanManage)
+{
+    <div class="modal fade" id="assignFromListModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Issue Asset to Employee</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="assignFromListForm" onsubmit="event.preventDefault(); HrmsAssetDoc.submitAjaxForm('#assignFromListForm', '@Url.Action("AssignAsset")', '#assignFromListModal');">
+                    @Html.AntiForgeryToken()
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold">Available Asset <span class="text-danger">*</span></label>
+                            <select name="AssetId" class="form-select" required>
+                                <option value="">Select available asset...</option>
+                                @foreach (var ast in Model.AvailableAssets)
+                                {
+                                    <option value="@ast.AssetId">@ast.AssetTag — @ast.AssetName (@ast.ConditionStatus)</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold">Employee <span class="text-danger">*</span></label>
+                            <select name="EmployeeId" class="form-select" required>
+                                <option value="">Select active employee...</option>
+                                @foreach (var emp in Model.Employees)
+                                {
+                                    <option value="@emp.EmployeeId">@emp.FullName (@emp.EmployeeCode)</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="row g-2 mb-3">
+                            <div class="col-6">
+                                <label class="form-label small fw-semibold">Assigned Date</label>
+                                <input type="date" name="AssignedDate" value="@DateTime.Today.ToString("yyyy-MM-dd")" class="form-control" required />
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label small fw-semibold">Expected Return</label>
+                                <input type="date" name="ExpectedReturnDate" class="form-control" />
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold">Condition at Issue</label>
+                            <select name="ConditionAtIssue" class="form-select">
+                                <option value="New">New</option>
+                                <option value="Good" selected>Good</option>
+                                <option value="Fair">Fair</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="form-label small fw-semibold">Remarks</label>
+                            <textarea name="IssueRemarks" class="form-control" rows="2"></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Assign Asset</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="returnAssetModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Process Asset Return</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="returnAssetForm" onsubmit="event.preventDefault(); HrmsAssetDoc.submitAjaxForm('#returnAssetForm', '@Url.Action("ReturnAsset")', '#returnAssetModal');">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" id="retAllocId" name="AllocationId" value="0" />
+                    <div class="modal-body">
+                        <div class="fw-semibold mb-3" id="retLabel"></div>
+                        <div class="row g-2 mb-3">
+                            <div class="col-4">
+                                <label class="form-label small fw-semibold">Return Date</label>
+                                <input type="date" id="retDate" name="ReturnedDate" class="form-control" required />
+                            </div>
+                            <div class="col-4">
+                                <label class="form-label small fw-semibold">Condition</label>
+                                <select id="retCondition" name="ConditionAtReturn" class="form-select">
+                                    <option value="Good">Good</option>
+                                    <option value="Fair">Fair</option>
+                                    <option value="Damaged">Damaged</option>
+                                    <option value="Lost">Lost</option>
+                                </select>
+                            </div>
+                            <div class="col-4">
+                                <label class="form-label small fw-semibold">Outcome</label>
+                                <select id="retStatus" name="AllocationStatus" class="form-select">
+                                    <option value="Returned">Returned</option>
+                                    <option value="Damaged">Damaged</option>
+                                    <option value="Lost">Lost</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="form-label small fw-semibold">Remarks</label>
+                            <textarea id="retRemarks" name="ReturnRemarks" class="form-control" rows="2"></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-warning">Complete Return</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <script src="~/js/asset-document.js" asp-append-version="true"></script>
+}

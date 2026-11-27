@@ -1,0 +1,179 @@
+@model LeaveCalendarPageViewModel
+@{
+    ViewData["Title"] = "Team Leave Calendar";
+    ViewData["BreadcrumbParent"] = "Leave Management";
+    var firstDay = new DateTime(Model.Year, Model.Month, 1);
+    var daysInMonth = DateTime.DaysInMonth(Model.Year, Model.Month);
+    var startOffset = (int)firstDay.DayOfWeek;
+    var holidaysByDate = Model.Holidays
+        .Where(h => h.HolidayDate.Year == Model.Year && h.HolidayDate.Month == Model.Month)
+        .GroupBy(h => h.HolidayDate.Date)
+        .ToDictionary(g => g.Key, g => g.First());
+}
+
+@section PageActions {
+    <a asp-action="Index" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-card-checklist me-1"></i>Leave Applications
+    </a>
+}
+
+<div class="card border-0 shadow-sm mb-3">
+    <div class="card-body py-3">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-md-2">
+                <label class="form-label small fw-semibold">Year</label>
+                <select name="year" class="form-select form-select-sm">
+                    @for (int y = DateTime.Today.Year - 2; y <= DateTime.Today.Year + 1; y++)
+                    {
+                        <option value="@y" selected="@(Model.Year == y)">@y</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small fw-semibold">Month</label>
+                <select name="month" class="form-select form-select-sm">
+                    @for (int m = 1; m <= 12; m++)
+                    {
+                        <option value="@m" selected="@(Model.Month == m)">@(new DateTime(2026, m, 1).ToString("MMMM"))</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-5">
+                <label class="form-label small fw-semibold">Department</label>
+                <select name="departmentId" class="form-select form-select-sm">
+                    <option value="">All Departments</option>
+                    @foreach (var d in Model.Departments)
+                    {
+                        <option value="@d.DepartmentId" selected="@(Model.DepartmentId == d.DepartmentId)">@d.DepartmentName</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-2 d-grid">
+                <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-search me-1"></i>Load</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm mb-3">
+    <div class="card-header bg-transparent d-flex justify-content-between align-items-center py-3">
+        <span class="fw-bold text-primary">@firstDay.ToString("MMMM yyyy")</span>
+        <span class="small text-body-secondary">@Model.Events.Count leave event(s) scheduled</span>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-bordered align-top mb-0" style="table-layout: fixed; min-width: 760px;">
+                <thead class="table-light text-center small">
+                    <tr>
+                        <th>Sun</th><th>Mon</th><th>Tue</th><th>Wed</th><th>Thu</th><th>Fri</th><th>Sat</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @{
+                        int cell = 0;
+                        int totalCells = startOffset + daysInMonth;
+                        int rows = (int)Math.Ceiling(totalCells / 7.0);
+                    }
+                    @for (int r = 0; r < rows; r++)
+                    {
+                        <tr>
+                            @for (int c = 0; c < 7; c++)
+                            {
+                                int dayNum = cell - startOffset + 1;
+                                cell++;
+                                if (dayNum < 1 || dayNum > daysInMonth)
+                                {
+                                    <td class="bg-body-tertiary" style="height: 105px;"></td>
+                                }
+                                else
+                                {
+                                    var currentDate = new DateTime(Model.Year, Model.Month, dayNum);
+                                    holidaysByDate.TryGetValue(currentDate, out var hol);
+                                    var dayEvents = Model.Events
+                                        .Where(e => e.StartDate.Date <= currentDate && e.EndDate.Date >= currentDate)
+                                        .ToList();
+                                    <td style="height: 105px;">
+                                        <div class="d-flex justify-content-between align-items-center mb-1">
+                                            <span class="small fw-bold @(currentDate == DateTime.Today ? "text-primary" : "")">@dayNum</span>
+                                            @if (hol is not null)
+                                            {
+                                                <span class="badge bg-info-subtle text-info-emphasis" title="@hol.HolidayName">Holiday</span>
+                                            }
+                                        </div>
+                                        @if (hol is not null)
+                                        {
+                                            <div class="small text-info fw-medium text-truncate mb-1" title="@hol.HolidayName">@hol.HolidayName</div>
+                                        }
+                                        <div class="d-flex flex-column gap-1">
+                                            @foreach (var ev in dayEvents.Take(3))
+                                            {
+                                                <span class="badge text-white text-start text-truncate"
+                                                      style="background-color: @ev.ColorHex; font-size: 0.7rem;"
+                                                      title="@ev.FullName (@ev.LeaveName - @ev.ApprovalStatus)">
+                                                    @ev.FullName (@ev.LeaveCode)
+                                                </span>
+                                            }
+                                            @if (dayEvents.Count > 3)
+                                            {
+                                                <span class="small text-body-secondary">+@(dayEvents.Count - 3) more</span>
+                                            }
+                                        </div>
+                                    </td>
+                                }
+                            }
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Month Events List -->
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-transparent py-3">
+        <h6 class="fw-bold mb-0">Scheduled Leave Breakdown (@firstDay.ToString("MMMM yyyy"))</h6>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle hrms-leave-datatable w-100">
+                <thead>
+                    <tr>
+                        <th>Employee</th>
+                        <th>Department</th>
+                        <th>Leave Type</th>
+                        <th>Period</th>
+                        <th class="text-end">Days</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var ev in Model.Events)
+                    {
+                        var cls = ev.ApprovalStatus == "Approved"
+                            ? "bg-success-subtle text-success-emphasis"
+                            : "bg-warning-subtle text-warning-emphasis";
+                        <tr>
+                            <td>
+                                <span class="fw-semibold">@ev.FullName</span>
+                                <span class="small text-body-secondary ms-1">(@ev.EmployeeCode)</span>
+                            </td>
+                            <td>@ev.DepartmentName</td>
+                            <td>
+                                <span class="badge text-white" style="background-color: @ev.ColorHex">@ev.LeaveCode</span>
+                                <span class="small ms-1">@ev.LeaveName</span>
+                            </td>
+                            <td class="small">@ev.StartDate.ToString("dd MMM") - @ev.EndDate.ToString("dd MMM yyyy")</td>
+                            <td class="text-end fw-semibold">@ev.TotalDays.ToString("0.##")</td>
+                            <td><span class="badge @cls">@ev.ApprovalStatus</span></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/leave.js" asp-append-version="true"></script>
+}

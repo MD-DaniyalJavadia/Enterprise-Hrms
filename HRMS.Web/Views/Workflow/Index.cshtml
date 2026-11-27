@@ -1,0 +1,565 @@
+@using System.Text.Json
+@model WorkflowsPageViewModel
+@{
+    ViewData["Title"] = "Approval Workflow Engine";
+    ViewData["BreadcrumbParent"] = "Administration";
+    var camelOpts = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+    var inProgressCount = Model.Instances.Count(x => x.InstanceStatus == "InProgress");
+    var escalatedCount = Model.Instances.Count(x => x.InstanceStatus == "Escalated");
+    var completedCount = Model.Instances.Count(x => x.InstanceStatus == "Approved");
+}
+
+@section PageActions {
+    <div class="d-flex flex-wrap gap-2">
+        @if (Model.CanManageWorkflows)
+        {
+            <button type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#initiateWorkflowModal">
+                <i class="bi bi-play-circle me-1"></i>Initiate Request Flow
+            </button>
+            <button type="button" class="btn btn-primary btn-sm" onclick="HrmsAdmin.openWorkflowModal()">
+                <i class="bi bi-diagram-3 me-1"></i>New Workflow Rule
+            </button>
+        }
+    </div>
+}
+
+<!-- KPI Strip -->
+<div class="row g-3 mb-3">
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body py-3">
+                <div class="small text-body-secondary fw-semibold">Configured Workflows</div>
+                <div class="fs-4 fw-bold text-primary">@Model.Definitions.Count(x => x.IsActive)</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body py-3">
+                <div class="small text-info fw-semibold">Active In-Progress</div>
+                <div class="fs-4 fw-bold text-info">@inProgressCount</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body py-3">
+                <div class="small text-warning fw-semibold">SLA Escalated</div>
+                <div class="fs-4 fw-bold text-warning">@escalatedCount</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body py-3">
+                <div class="small text-success fw-semibold">Approved Flows</div>
+                <div class="fs-4 fw-bold text-success">@completedCount</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tabs -->
+<ul class="nav nav-tabs mb-3" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tabInstances" type="button" role="tab">
+            <i class="bi bi-activity me-1"></i>Live Workflow Monitor (@Model.Instances.Count)
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabDefinitions" type="button" role="tab">
+            <i class="bi bi-diagram-3 me-1"></i>Workflow Rules &amp; Steps (@Model.Definitions.Count)
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabHistory" type="button" role="tab">
+            <i class="bi bi-journal-text me-1"></i>Transition History (@Model.ActionLogs.Count)
+        </button>
+    </li>
+</ul>
+
+<div class="tab-content">
+    <!-- Tab 1: Live Instances -->
+    <div class="tab-pane fade show active" id="tabInstances" role="tabpanel">
+        <div class="card border-0 shadow-sm mb-3">
+            <div class="card-body py-3">
+                <form method="get" class="row g-2 align-items-end">
+                    <div class="col-md-3">
+                        <label class="form-label small fw-semibold">Module</label>
+                        <select name="moduleFilter" class="form-select form-select-sm">
+                            <option value="">All Modules</option>
+                            @foreach (var m in new[] { "Leave", "Loan", "Expense", "Separation", "AttendanceRegularization", "Overtime", "JobRequisition", "ProfileUpdate" })
+                            {
+                                <option value="@m" selected="@(Model.ModuleFilter == m)">@m</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small fw-semibold">Status</label>
+                        <select name="statusFilter" class="form-select form-select-sm">
+                            <option value="">All Statuses</option>
+                            @foreach (var s in new[] { "InProgress", "Escalated", "Approved", "Rejected", "Cancelled" })
+                            {
+                                <option value="@s" selected="@(Model.StatusFilter == s)">@s</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-2 d-flex gap-2">
+                        <button type="submit" class="btn btn-primary btn-sm flex-fill"><i class="bi bi-funnel me-1"></i>Filter</button>
+                        <a asp-action="Index" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-counterclockwise"></i></a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle hrms-admin-datatable w-100">
+                        <thead>
+                            <tr>
+                                <th>Reference</th>
+                                <th>Workflow &amp; Module</th>
+                                <th>Requester</th>
+                                <th>Stage Progress</th>
+                                <th>SLA Due (UTC)</th>
+                                <th>Status</th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var inst in Model.Instances)
+                            {
+                                var badge = inst.InstanceStatus switch
+                                {
+                                    "Approved" => "bg-success-subtle text-success-emphasis",
+                                    "Rejected" or "Cancelled" => "bg-danger-subtle text-danger-emphasis",
+                                    "Escalated" => "bg-warning-subtle text-warning-emphasis",
+                                    _ => "bg-info-subtle text-info-emphasis"
+                                };
+                                var isOpen = inst.InstanceStatus is "InProgress" or "Escalated";
+                                <tr>
+                                    <td class="small">
+                                        <div class="fw-semibold font-monospace">@inst.ReferenceNumber</div>
+                                        <div class="text-body-secondary">@inst.Summary</div>
+                                    </td>
+                                    <td class="small">
+                                        <div class="fw-semibold">@inst.WorkflowName</div>
+                                        <span class="badge bg-primary-subtle text-primary-emphasis">@inst.ModuleName</span>
+                                    </td>
+                                    <td class="small">@inst.RequesterName</td>
+                                    <td class="small">
+                                        <div>Step @inst.CurrentStepOrder / @inst.TotalSteps</div>
+                                        <div class="text-body-secondary">@inst.CurrentStepName</div>
+                                    </td>
+                                    <td class="small">
+                                        @(inst.DueAtUtc.HasValue ? inst.DueAtUtc.Value.ToString("dd MMM HH:mm") : "-")
+                                    </td>
+                                    <td><span class="badge @badge">@inst.InstanceStatus</span></td>
+                                    <td class="text-end text-nowrap">
+                                        @if (Model.CanManageWorkflows && isOpen)
+                                        {
+                                            <button type="button" class="btn btn-sm btn-outline-success"
+                                                    onclick='HrmsAdmin.openAdvanceModal(@inst.InstanceId, @Html.Raw(JsonSerializer.Serialize(inst.ReferenceNumber)), "Approved")'>
+                                                <i class="bi bi-check2"></i> Advance
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-outline-warning"
+                                                    onclick='HrmsAdmin.openAdvanceModal(@inst.InstanceId, @Html.Raw(JsonSerializer.Serialize(inst.ReferenceNumber)), "Escalated")' title="Escalate">
+                                                <i class="bi bi-exclamation-triangle"></i>
+                                            </button>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tab 2: Workflow Definitions & Step Pipelines -->
+    <div class="tab-pane fade" id="tabDefinitions" role="tabpanel">
+        @if (!Model.Definitions.Any())
+        {
+            <div class="card border-0 shadow-sm p-5 text-center text-body-secondary">No approval workflows configured yet.</div>
+        }
+        else
+        {
+            <div class="row g-3">
+                @foreach (var wf in Model.Definitions)
+                {
+                    var wfSteps = Model.Steps.Where(s => s.WorkflowId == wf.WorkflowId).OrderBy(s => s.StepOrder).ToList();
+                    <div class="col-lg-6">
+                        <div class="card border-0 shadow-sm h-100">
+                            <div class="card-header bg-transparent py-3 d-flex justify-content-between align-items-start gap-2">
+                                <div>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span class="badge bg-primary-subtle text-primary-emphasis">@wf.ModuleName</span>
+                                        <span class="font-monospace small text-body-secondary">@wf.WorkflowCode</span>
+                                        <span class="badge @(wf.IsActive ? "bg-success-subtle text-success-emphasis" : "bg-secondary-subtle text-secondary-emphasis")">
+                                            @(wf.IsActive ? "Active" : "Inactive")
+                                        </span>
+                                    </div>
+                                    <h6 class="fw-bold mt-1 mb-0">@wf.WorkflowName</h6>
+                                    @if (!string.IsNullOrWhiteSpace(wf.Description))
+                                    {
+                                        <div class="small text-body-secondary mt-1">@wf.Description</div>
+                                    }
+                                </div>
+                                @if (Model.CanManageWorkflows)
+                                {
+                                    <div class="d-flex gap-1">
+                                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="HrmsAdmin.openStepModal(@wf.WorkflowId)" title="Add Step">
+                                            <i class="bi bi-plus-lg"></i> Step
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-outline-secondary"
+                                                onclick='HrmsAdmin.openWorkflowModal(@Html.Raw(JsonSerializer.Serialize(wf, camelOpts)))'>
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-outline-danger"
+                                                onclick="HrmsAdmin.deleteEntity('/Workflow/DeleteDefinition/@wf.WorkflowId', 'Delete workflow @wf.WorkflowCode?')">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </div>
+                                }
+                            </div>
+                            <div class="card-body">
+                                <div class="small text-body-secondary mb-2">
+                                    Scope: <strong>@(wf.DepartmentName ?? "All Departments")</strong>
+                                    @if (wf.MinAmountThreshold.HasValue)
+                                    {
+                                        <span class="ms-2">&bull; Threshold &ge; <strong>@wf.MinAmountThreshold.Value.ToString("C0")</strong></span>
+                                    }
+                                    <span class="ms-2">&bull; Auto-Escalate: <strong>@(wf.AutoEscalateHours)h</strong></span>
+                                </div>
+                                @if (!wfSteps.Any())
+                                {
+                                    <div class="small text-body-secondary fst-italic">No approval steps defined. Add at least one step.</div>
+                                }
+                                else
+                                {
+                                    <div class="list-group list-group-flush border rounded">
+                                        @foreach (var st in wfSteps)
+                                        {
+                                            <div class="list-group-item d-flex justify-content-between align-items-center py-2">
+                                                <div class="small">
+                                                    <span class="badge bg-dark-subtle text-body me-1">Stage @st.StepOrder</span>
+                                                    <strong class="me-2">@st.StepName</strong>
+                                                    <span class="text-body-secondary">
+                                                        (@st.ApproverType@(st.ApproverRoleName != null ? $": {st.ApproverRoleName}" : st.ApproverEmployeeName != null ? $": {st.ApproverEmployeeName}" : ""))
+                                                        &bull; SLA @(st.SlaHours)h
+                                                    </span>
+                                                </div>
+                                                @if (Model.CanManageWorkflows)
+                                                {
+                                                    <div class="d-flex gap-1">
+                                                        <button type="button" class="btn btn-sm btn-link p-1 text-secondary"
+                                                                onclick='HrmsAdmin.openStepModal(@wf.WorkflowId, @Html.Raw(JsonSerializer.Serialize(st, camelOpts)))'>
+                                                            <i class="bi bi-pencil"></i>
+                                                        </button>
+                                                        <button type="button" class="btn btn-sm btn-link p-1 text-danger"
+                                                                onclick="HrmsAdmin.deleteEntity('/Workflow/DeleteStep/@st.WorkflowStepId', 'Remove step @st.StepName?')">
+                                                            <i class="bi bi-x-lg"></i>
+                                                        </button>
+                                                    </div>
+                                                }
+                                            </div>
+                                        }
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+
+    <!-- Tab 3: Transition History -->
+    <div class="tab-pane fade" id="tabHistory" role="tabpanel">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle hrms-admin-datatable w-100">
+                        <thead>
+                            <tr>
+                                <th>Timestamp (UTC)</th>
+                                <th>Reference</th>
+                                <th>Stage</th>
+                                <th>Action</th>
+                                <th>Actor</th>
+                                <th>Comments</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var log in Model.ActionLogs)
+                            {
+                                <tr>
+                                    <td class="small font-monospace">@log.ActionDate.ToString("dd MMM yyyy HH:mm")</td>
+                                    <td class="small fw-semibold font-monospace">@log.ReferenceNumber</td>
+                                    <td class="small">Step @log.StepOrder: @log.StepName</td>
+                                    <td><span class="badge bg-secondary-subtle text-secondary-emphasis">@log.ActionTaken</span></td>
+                                    <td class="small">@log.ActorName</td>
+                                    <td class="small text-body-secondary">@(log.Comments ?? "-")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (Model.CanManageWorkflows)
+{
+    <!-- Workflow Definition Modal -->
+    <div class="modal fade" id="workflowDefModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="wfModalTitle">Workflow Definition</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="workflowDefForm" onsubmit="event.preventDefault(); HrmsAdmin.submitAjaxForm('#workflowDefForm', '@Url.Action("SaveDefinition")', '#workflowDefModal');">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" id="wfId" name="WorkflowId" value="0" />
+                    <div class="modal-body">
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="form-label small fw-semibold">Workflow Code <span class="text-danger">*</span></label>
+                                <input type="text" id="wfCode" name="WorkflowCode" class="form-control text-uppercase" maxlength="40" required />
+                            </div>
+                            <div class="col-md-8">
+                                <label class="form-label small fw-semibold">Workflow Name <span class="text-danger">*</span></label>
+                                <input type="text" id="wfName" name="WorkflowName" class="form-control" maxlength="120" required />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small fw-semibold">Module <span class="text-danger">*</span></label>
+                                <select id="wfModule" name="ModuleName" class="form-select" required>
+                                    <option value="Leave">Leave</option>
+                                    <option value="Loan">Loan</option>
+                                    <option value="Expense">Expense</option>
+                                    <option value="Separation">Separation</option>
+                                    <option value="AttendanceRegularization">AttendanceRegularization</option>
+                                    <option value="Overtime">Overtime</option>
+                                    <option value="JobRequisition">JobRequisition</option>
+                                    <option value="ProfileUpdate">ProfileUpdate</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small fw-semibold">Department Scope</label>
+                                <select id="wfDept" name="DepartmentId" class="form-select">
+                                    <option value="">All Departments</option>
+                                    @foreach (var d in Model.Departments)
+                                    {
+                                        <option value="@d.DepartmentId">@d.DepartmentName</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label small fw-semibold">Min Amount</label>
+                                <input type="number" step="0.01" min="0" id="wfThreshold" name="MinAmountThreshold" class="form-control" />
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label small fw-semibold">Escalate (h)</label>
+                                <input type="number" min="1" max="720" id="wfEscalate" name="AutoEscalateHours" class="form-control" value="48" required />
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label small fw-semibold">Description</label>
+                                <textarea id="wfDesc" name="Description" class="form-control" rows="2" maxlength="300"></textarea>
+                            </div>
+                            <div class="col-12">
+                                <div class="form-check form-switch">
+                                    <input type="hidden" name="IsActive" value="false" />
+                                    <input class="form-check-input" type="checkbox" id="wfActive" name="IsActive" value="true" checked />
+                                    <label class="form-check-label small fw-semibold" for="wfActive">Workflow Rule Active</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Save Workflow</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Workflow Step Modal -->
+    <div class="modal fade" id="workflowStepModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="wsModalTitle">Approval Stage</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="workflowStepForm" onsubmit="event.preventDefault(); HrmsAdmin.submitAjaxForm('#workflowStepForm', '@Url.Action("SaveStep")', '#workflowStepModal');">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" id="wsId" name="WorkflowStepId" value="0" />
+                    <input type="hidden" id="wsWorkflowId" name="WorkflowId" value="0" />
+                    <div class="modal-body">
+                        <div class="row g-3">
+                            <div class="col-md-3">
+                                <label class="form-label small fw-semibold">Stage Order <span class="text-danger">*</span></label>
+                                <input type="number" id="wsOrder" name="StepOrder" class="form-control" min="1" max="20" value="1" required />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-semibold">Stage Name <span class="text-danger">*</span></label>
+                                <input type="text" id="wsName" name="StepName" class="form-control" maxlength="100" required />
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label small fw-semibold">SLA (Hours)</label>
+                                <input type="number" id="wsSla" name="SlaHours" class="form-control" min="1" max="720" value="24" required />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small fw-semibold">Approver Type</label>
+                                <select id="wsApproverType" name="ApproverType" class="form-select" onchange="HrmsAdmin.toggleApproverFields()">
+                                    <option value="ReportingManager">ReportingManager</option>
+                                    <option value="RoleBased">RoleBased</option>
+                                    <option value="DepartmentHead">DepartmentHead</option>
+                                    <option value="SpecificEmployee">SpecificEmployee</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4" id="wsRoleGroup">
+                                <label class="form-label small fw-semibold">Approver Role</label>
+                                <select id="wsRoleId" name="ApproverRoleId" class="form-select">
+                                    <option value="">-- Optional / Role --</option>
+                                    @foreach (var r in Model.Roles)
+                                    {
+                                        <option value="@r.RoleId">@r.RoleName</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="col-md-4 d-none" id="wsEmpGroup">
+                                <label class="form-label small fw-semibold">Specific Employee</label>
+                                <select id="wsEmpId" name="ApproverEmployeeId" class="form-select">
+                                    <option value="">-- Select Employee --</option>
+                                    @foreach (var emp in Model.Employees)
+                                    {
+                                        <option value="@emp.EmployeeId">@emp.FullName (@emp.EmployeeCode)</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small fw-semibold">Escalation Role</label>
+                                <select id="wsEscRoleId" name="EscalationRoleId" class="form-select">
+                                    <option value="">-- None --</option>
+                                    @foreach (var r in Model.Roles)
+                                    {
+                                        <option value="@r.RoleId">@r.RoleName</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-check form-switch">
+                                    <input type="hidden" name="CanDelegate" value="false" />
+                                    <input class="form-check-input" type="checkbox" id="wsDelegate" name="CanDelegate" value="true" checked />
+                                    <label class="form-check-label small" for="wsDelegate">Allow Delegation</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-check form-switch">
+                                    <input type="hidden" name="IsMandatory" value="false" />
+                                    <input class="form-check-input" type="checkbox" id="wsMandatory" name="IsMandatory" value="true" checked />
+                                    <label class="form-check-label small" for="wsMandatory">Mandatory Sign-Off</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Save Stage</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Initiate Workflow Modal -->
+    <div class="modal fade" id="initiateWorkflowModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Initiate Workflow Instance</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="initiateWorkflowForm" onsubmit="event.preventDefault(); HrmsAdmin.submitAjaxForm('#initiateWorkflowForm', '@Url.Action("InitiateInstance")', '#initiateWorkflowModal');">
+                    @Html.AntiForgeryToken()
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold">Workflow Rule <span class="text-danger">*</span></label>
+                            <select name="WorkflowId" class="form-select" required>
+                                <option value="">-- Select Active Workflow --</option>
+                                @foreach (var w in Model.Definitions.Where(x => x.IsActive))
+                                {
+                                    <option value="@w.WorkflowId">@w.WorkflowName (@w.ModuleName)</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="row g-2 mb-3">
+                            <div class="col-6">
+                                <label class="form-label small fw-semibold">Reference # <span class="text-danger">*</span></label>
+                                <input type="text" name="ReferenceNumber" class="form-control text-uppercase" maxlength="60" placeholder="e.g. LV-2026-0210" required />
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label small fw-semibold">Entity ID <span class="text-danger">*</span></label>
+                                <input type="text" name="EntityId" class="form-control" maxlength="50" placeholder="e.g. 42" required />
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold">Request Summary <span class="text-danger">*</span></label>
+                            <textarea name="Summary" class="form-control" rows="2" maxlength="300" required></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Launch Workflow</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Advance / Action Workflow Modal -->
+    <div class="modal fade" id="advanceWorkflowModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Workflow Decision: <span id="advRefDisplay" class="font-monospace"></span></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="advanceWorkflowForm" onsubmit="event.preventDefault(); HrmsAdmin.submitAjaxForm('#advanceWorkflowForm', '@Url.Action("AdvanceInstance")', '#advanceWorkflowModal');">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" id="advInstanceId" name="InstanceId" value="0" />
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold">Decision / Transition <span class="text-danger">*</span></label>
+                            <select id="advAction" name="ActionTaken" class="form-select" required>
+                                <option value="Approved">Approve Current Stage</option>
+                                <option value="Rejected">Reject Request</option>
+                                <option value="Escalated">Escalate (SLA Breach / Override)</option>
+                                <option value="Delegated">Delegate &amp; Extend SLA (+24h)</option>
+                                <option value="Cancelled">Cancel Workflow</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold">Decision Comments</label>
+                            <textarea id="advComments" name="Comments" class="form-control" rows="3" maxlength="400"></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Apply Transition</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <script src="~/js/system-admin.js" asp-append-version="true"></script>
+}

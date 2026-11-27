@@ -1,0 +1,39 @@
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: hrms-sqlserver
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_PID: "Developer"
+      MSSQL_SA_PASSWORD: "${MSSQL_SA_PASSWORD:?Set MSSQL_SA_PASSWORD in environment or .env}"
+    ports:
+      - "1433:1433"
+    volumes:
+      - hrms_sql_data:/var/opt/mssql
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"$${MSSQL_SA_PASSWORD}\" -C -Q 'SELECT 1' || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+
+  hrms-web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: hrms-web
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: "Production"
+      ConnectionStrings__DefaultConnection: "${HRMS_CONNECTION_STRING:?Set HRMS_CONNECTION_STRING in environment or .env}"
+    ports:
+      - "8080:8080"
+    volumes:
+      - hrms_app_data:/app/App_Data
+      - hrms_uploads:/app/wwwroot/uploads
+
+volumes:
+  hrms_sql_data:
+  hrms_app_data:
+  hrms_uploads:

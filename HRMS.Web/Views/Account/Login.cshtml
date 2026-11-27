@@ -1,0 +1,88 @@
+@model LoginViewModel
+@{
+    Layout = "_AuthLayout";
+    ViewData["Title"] = "Sign In";
+}
+<div class="row justify-content-center">
+    <div class="col-11 col-md-9 col-lg-8 col-xl-7">
+        <div class="card border-0 shadow-lg overflow-hidden rounded-4">
+            <div class="row g-0">
+                <div class="col-md-5 hrms-auth-panel text-white p-4 p-lg-5 d-flex flex-column justify-content-between">
+                    <div>
+                        <div class="d-flex align-items-center gap-2 mb-4">
+                            <span class="hrms-brand-icon"><i class="bi bi-buildings-fill"></i></span>
+                            <span class="fw-bold fs-5">EnterpriseHR</span>
+                        </div>
+                        <h2 class="h4 fw-bold mb-3">Human Capital, Unified.</h2>
+                        <p class="small text-white-50 mb-0">
+                            Manage workforce operations, attendance, payroll, leave approvals, and analytics from one secure enterprise platform.
+                        </p>
+                    </div>
+                    <div class="pt-4 small text-white-50">
+                        <i class="bi bi-shield-lock-fill me-1"></i> Role &amp; Claims Protected
+                    </div>
+                </div>
+
+                <div class="col-md-7 p-4 p-lg-5 bg-body">
+                    <h1 class="h4 fw-bold mb-1">Welcome back</h1>
+                    <p class="text-body-secondary small mb-4">Sign in with your corporate credentials.</p>
+
+                    @if (TempData["SuccessMessage"] != null)
+                    {
+                        <div class="alert alert-success small py-2">@TempData["SuccessMessage"]</div>
+                    }
+
+                    <form asp-action="Login" method="post" novalidate>
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" asp-for="ReturnUrl" />
+
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger small py-2" role="alert"></div>
+
+                        <div class="mb-3">
+                            <label asp-for="UsernameOrEmail" class="form-label small fw-semibold"></label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-person"></i></span>
+                                <input asp-for="UsernameOrEmail" class="form-control" placeholder="username or work email" autofocus />
+                            </div>
+                            <span asp-validation-for="UsernameOrEmail" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Password" class="form-label small fw-semibold"></label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-lock"></i></span>
+                                <input asp-for="Password" class="form-control" id="loginPasswordInput" placeholder="Enter password" />
+                                <button class="btn btn-outline-secondary" type="button" id="togglePasswordBtn" aria-label="Toggle password visibility">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                            </div>
+                            <span asp-validation-for="Password" class="text-danger small"></span>
+                        </div>
+
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <div class="form-check">
+                                <input asp-for="RememberMe" class="form-check-input" />
+                                <label asp-for="RememberMe" class="form-check-label small"></label>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold">
+                            <i class="bi bi-box-arrow-in-right me-2"></i>Sign In
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $('#togglePasswordBtn').on('click', function () {
+            const input = $('#loginPasswordInput');
+            const isPassword = input.attr('type') === 'password';
+            input.attr('type', isPassword ? 'text' : 'password');
+            $(this).find('i').toggleClass('bi-eye bi-eye-slash');
+        });
+    </script>
+}

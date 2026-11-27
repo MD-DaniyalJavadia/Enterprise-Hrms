@@ -1,0 +1,108 @@
+@using HRMS.Business.Interfaces
+@inject INotificationService NotificationService
+@{
+    var notifications = User.Identity?.IsAuthenticated == true
+        ? (await NotificationService.GetUserNotificationsAsync(User.GetCompanyId(), User.GetUserId(), 8)).ToList()
+        : new List<HRMS.Models.Entities.Notification>();
+    var unreadCount = notifications.Count(n => !n.IsRead);
+    var fullName = User.GetFullName();
+    var initials = string.Join("", fullName.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(s => char.ToUpperInvariant(s[0])));
+}
+<header class="hrms-topbar navbar navbar-expand border-bottom px-3 px-lg-4">
+    <div class="d-flex align-items-center gap-3 flex-grow-1">
+        <button class="btn btn-outline-secondary btn-sm" id="sidebarToggleBtn" type="button" aria-label="Toggle navigation">
+            <i class="bi bi-list fs-5"></i>
+        </button>
+
+        <div class="position-relative hrms-global-search d-none d-md-block">
+            <div class="input-group input-group-sm">
+                <span class="input-group-text bg-transparent border-end-0"><i class="bi bi-search"></i></span>
+                <input type="search" id="globalSearchInput" class="form-control border-start-0" placeholder="Search employees, codes, departments..." autocomplete="off" />
+            </div>
+            <div class="dropdown-menu w-100 shadow-lg p-2 d-none" id="globalSearchResults"></div>
+        </div>
+    </div>
+
+    <div class="d-flex align-items-center gap-2 gap-md-3">
+        <span class="badge bg-primary-subtle text-primary-emphasis d-none d-lg-inline-flex align-items-center gap-1 px-2 py-2">
+            <i class="bi bi-building"></i> @User.GetCompanyName()
+        </span>
+
+        <button class="btn btn-outline-secondary btn-sm" id="themeToggleBtn" type="button" title="Toggle Light/Dark theme">
+            <i class="bi bi-moon-stars" id="themeIcon"></i>
+        </button>
+
+        <div class="dropdown">
+            <button class="btn btn-outline-secondary btn-sm position-relative" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Notifications">
+                <i class="bi bi-bell"></i>
+                @if (unreadCount > 0)
+                {
+                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" id="unreadNotificationBadge">
+                        @unreadCount
+                    </span>
+                }
+            </button>
+            <div class="dropdown-menu dropdown-menu-end shadow-lg p-0 hrms-notif-dropdown">
+                <div class="d-flex justify-content-between align-items-center px-3 py-2 border-bottom">
+                    <span class="fw-semibold small">Notifications</span>
+                    @if (unreadCount > 0)
+                    {
+                        <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none" id="markAllReadBtn">Mark all read</button>
+                    }
+                </div>
+                <div class="list-group list-group-flush" id="notificationDropdownList" style="max-height: 320px; overflow-y: auto;">
+                    @if (!notifications.Any())
+                    {
+                        <div class="p-3 text-center text-body-secondary small">No notifications yet.</div>
+                    }
+                    else
+                    {
+                        @foreach (var item in notifications)
+                        {
+                            <a href="@(item.ActionUrl ?? "#")"
+                               class="list-group-item list-group-item-action py-2 px-3 @(item.IsRead ? "" : "bg-primary-subtle bg-opacity-10")"
+                               data-notification-id="@item.NotificationId">
+                                <div class="d-flex justify-content-between align-items-start gap-2">
+                                    <strong class="small">@item.Title</strong>
+                                    <span class="text-body-secondary" style="font-size: 0.7rem;">@item.CreatedDate.ToString("MMM dd")</span>
+                                </div>
+                                <div class="small text-body-secondary">@item.Message</div>
+                            </a>
+                        }
+                    }
+                </div>
+                <div class="border-top text-center py-2">
+                    <a asp-controller="Notifications" asp-action="Index" class="small fw-semibold text-decoration-none">
+                        View All Notifications <i class="bi bi-arrow-right ms-1"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="dropdown">
+            <button class="btn btn-link text-decoration-none dropdown-toggle d-flex align-items-center gap-2 p-1" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                <span class="hrms-avatar">@(string.IsNullOrEmpty(initials) ? "U" : initials)</span>
+                <span class="d-none d-sm-inline text-start">
+                    <span class="d-block fw-semibold small text-body lh-1">@fullName</span>
+                    <span class="d-block text-body-secondary" style="font-size: 0.72rem;">@(User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value ?? "User")</span>
+                </span>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end shadow">
+                <li>
+                    <a class="dropdown-item" asp-controller="Account" asp-action="ChangePassword">
+                        <i class="bi bi-key me-2"></i>Change Password
+                    </a>
+                </li>
+                <li><hr class="dropdown-divider" /></li>
+                <li>
+                    <form asp-controller="Account" asp-action="Logout" method="post" class="m-0">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="dropdown-item text-danger">
+                            <i class="bi bi-box-arrow-left me-2"></i>Sign Out
+                        </button>
+                    </form>
+                </li>
+            </ul>
+        </div>
+    </div>
+</header>

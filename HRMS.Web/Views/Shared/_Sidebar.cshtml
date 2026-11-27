@@ -1,0 +1,449 @@
+@{
+    var currentController = ViewContext.RouteData.Values["controller"]?.ToString() ?? string.Empty;
+    string IsActive(string controller) => string.Equals(currentController, controller, StringComparison.OrdinalIgnoreCase) ? "active" : string.Empty;
+}
+<aside class="hrms-sidebar" id="hrmsSidebar">
+    <div class="hrms-sidebar-brand d-flex align-items-center justify-content-between px-3">
+        <a asp-controller="Dashboard" asp-action="Index" class="d-flex align-items-center gap-2 text-decoration-none text-white">
+            <span class="hrms-brand-icon"><i class="bi bi-buildings-fill"></i></span>
+            <span class="hrms-brand-text fw-bold fs-5">EnterpriseHR</span>
+        </a>
+        <button class="btn btn-sm btn-link text-white-50 d-lg-none" id="sidebarMobileClose" type="button" aria-label="Close sidebar">
+            <i class="bi bi-x-lg"></i>
+        </button>
+    </div>
+
+    <nav class="hrms-sidebar-nav py-3">
+        <div class="hrms-nav-section">Core</div>
+        @if (User.HasPermission("DASHBOARD.VIEW"))
+        {
+            <a asp-controller="Dashboard" asp-action="Index" class="hrms-nav-link @IsActive("Dashboard")">
+                <i class="bi bi-speedometer2"></i><span>Executive Dashboard</span>
+            </a>
+        }
+        @if (User.HasPermission("ESS.VIEW"))
+        {
+            var isEssActive = string.Equals(currentController, "SelfService", StringComparison.OrdinalIgnoreCase);
+            var essAction = ViewContext.RouteData.Values["action"]?.ToString() ?? string.Empty;
+            <a class="hrms-nav-link @(isEssActive ? "active" : "")" data-bs-toggle="collapse" href="#essMenuCollapse" role="button" aria-expanded="@(isEssActive ? "true" : "false")">
+                <i class="bi bi-person-workspace"></i><span>Self-Service Portal</span>
+                <i class="bi bi-chevron-down ms-auto small"></i>
+            </a>
+            <div class="collapse @(isEssActive ? "show" : "")" id="essMenuCollapse">
+                <a asp-controller="SelfService" asp-action="Index" class="hrms-nav-link hrms-nav-sub @(isEssActive && essAction == "Index" ? "active" : "")">
+                    <i class="bi bi-house-heart"></i><span>My Workspace</span>
+                </a>
+                <a asp-controller="SelfService" asp-action="MyProfile" class="hrms-nav-link hrms-nav-sub @(isEssActive && essAction == "MyProfile" ? "active" : "")">
+                    <i class="bi bi-person-badge"></i><span>My Profile</span>
+                </a>
+                <a asp-controller="SelfService" asp-action="MyAttendance" class="hrms-nav-link hrms-nav-sub @(isEssActive && essAction == "MyAttendance" ? "active" : "")">
+                    <i class="bi bi-calendar-check"></i><span>My Attendance</span>
+                </a>
+                <a asp-controller="SelfService" asp-action="MyPayslips" class="hrms-nav-link hrms-nav-sub @(isEssActive && (essAction == "MyPayslips" || essAction == "ViewPayslip") ? "active" : "")">
+                    <i class="bi bi-file-earmark-text"></i><span>My Payslips</span>
+                </a>
+            </div>
+        }
+        @if (User.HasPermission("MANAGER.VIEW"))
+        {
+            var isMgrActive = string.Equals(currentController, "ManagerPortal", StringComparison.OrdinalIgnoreCase);
+            var mgrAction = ViewContext.RouteData.Values["action"]?.ToString() ?? string.Empty;
+            <a class="hrms-nav-link @(isMgrActive ? "active" : "")" data-bs-toggle="collapse" href="#mgrMenuCollapse" role="button" aria-expanded="@(isMgrActive ? "true" : "false")">
+                <i class="bi bi-people-fill"></i><span>Manager Portal</span>
+                <i class="bi bi-chevron-down ms-auto small"></i>
+            </a>
+            <div class="collapse @(isMgrActive ? "show" : "")" id="mgrMenuCollapse">
+                <a asp-controller="ManagerPortal" asp-action="Index" class="hrms-nav-link hrms-nav-sub @(isMgrActive && mgrAction == "Index" ? "active" : "")">
+                    <i class="bi bi-speedometer"></i><span>Team Command Center</span>
+                </a>
+                <a asp-controller="ManagerPortal" asp-action="Team" class="hrms-nav-link hrms-nav-sub @(isMgrActive && mgrAction == "Team" ? "active" : "")">
+                    <i class="bi bi-person-lines-fill"></i><span>My Team Roster</span>
+                </a>
+                <a asp-controller="ManagerPortal" asp-action="Approvals" class="hrms-nav-link hrms-nav-sub @(isMgrActive && mgrAction == "Approvals" ? "active" : "")">
+                    <i class="bi bi-check2-all"></i><span>Pending Approvals</span>
+                </a>
+            </div>
+        }
+
+        <div class="hrms-nav-section">Workforce &amp; Organization</div>
+        @if (User.HasPermission("ORG.VIEW"))
+        {
+            var isOrgActive = new[] { "Company", "Branch", "Department", "Designation", "Organization" }
+                .Contains(currentController, StringComparer.OrdinalIgnoreCase);
+            <a class="hrms-nav-link @(isOrgActive ? "active" : "")" data-bs-toggle="collapse" href="#orgMenuCollapse" role="button" aria-expanded="@(isOrgActive ? "true" : "false")">
+                <i class="bi bi-diagram-3"></i><span>Organization</span>
+                <i class="bi bi-chevron-down ms-auto small"></i>
+            </a>
+            <div class="collapse @(isOrgActive ? "show" : "")" id="orgMenuCollapse">
+                <a asp-controller="Company" asp-action="Index" class="hrms-nav-link hrms-nav-sub @IsActive("Company")">
+                    <i class="bi bi-building"></i><span>Companies</span>
+                </a>
+                <a asp-controller="Branch" asp-action="Index" class="hrms-nav-link hrms-nav-sub @IsActive("Branch")">
+                    <i class="bi bi-geo-alt"></i><span>Branches</span>
+                </a>
+                <a asp-controller="Department" asp-action="Index" class="hrms-nav-link hrms-nav-sub @IsActive("Department")">
+                    <i class="bi bi-diagram-2"></i><span>Departments</span>
+                </a>
+                <a asp-controller="Designation" asp-action="Index" class="hrms-nav-link hrms-nav-sub @IsActive("Designation")">
+                    <i class="bi bi-award"></i><span>Designations</span>
+                </a>
+                <a asp-controller="Organization" asp-action="Positions" class="hrms-nav-link hrms-nav-sub @(currentController == "Organization" && ViewContext.RouteData.Values["action"]?.ToString() == "Positions" ? "active" : "")">
+                    <i class="bi bi-layers"></i><span>Grades &amp; Positions</span>
+                </a>
+                <a asp-controller="Organization" asp-action="Locations" class="hrms-nav-link hrms-nav-sub @(currentController == "Organization" && ViewContext.RouteData.Values["action"]?.ToString() == "Locations" ? "active" : "")">
+                    <i class="bi bi-pin-map"></i><span>Locations &amp; Cost Centers</span>
+                </a>
+                <a asp-controller="Organization" asp-action="Shifts" class="hrms-nav-link hrms-nav-sub @(currentController == "Organization" && ViewContext.RouteData.Values["action"]?.ToString() == "Shifts" ? "active" : "")">
+                    <i class="bi bi-clock"></i><span>Shifts</span>
+                </a>
+                <a asp-controller="Organization" asp-action="OrgChart" class="hrms-nav-link hrms-nav-sub @(currentController == "Organization" && ViewContext.RouteData.Values["action"]?.ToString() == "OrgChart" ? "active" : "")">
+                    <i class="bi bi-diagram-3-fill"></i><span>Org Chart</span>
+                </a>
+            </div>
+        }
+        @if (User.HasPermission("EMPLOYEE.VIEW"))
+        {
+            var isEmpActive = string.Equals(currentController, "Employee", StringComparison.OrdinalIgnoreCase);
+            var empAction = ViewContext.RouteData.Values["action"]?.ToString() ?? string.Empty;
+            <a class="hrms-nav-link @(isEmpActive ? "active" : "")" data-bs-toggle="collapse" href="#empMenuCollapse" role="button" aria-expanded="@(isEmpActive ? "true" : "false")">
+                <i class="bi bi-person-vcard"></i><span>Employees</span>
+                <i class="bi bi-chevron-down ms-auto small"></i>
+            </a>
+            <div class="collapse @(isEmpActive ? "show" : "")" id="empMenuCollapse">
+                <a asp-controller="Employee" asp-action="Index" class="hrms-nav-link hrms-nav-sub @(isEmpActive && empAction == "Index" ? "active" : "")">
+                    <i class="bi bi-table"></i><span>Employee List</span>
+                </a>
+                <a asp-controller="Employee" asp-action="Directory" class="hrms-nav-link hrms-nav-sub @(isEmpActive && empAction == "Directory" ? "active" : "")">
+                    <i class="bi bi-grid-3x3-gap"></i><span>Directory</span>
+                </a>
+                @if (User.HasPermission("EMPLOYEE.MANAGE"))
+                {
+                    <a asp-controller="Employee" asp-action="Create" class="hrms-nav-link hrms-nav-sub @(isEmpActive && empAction == "Create" ? "active" : "")">
+                        <i class="bi bi-person-plus"></i><span>Register Employee</span>
+                    </a>
+                    <a asp-controller="Employee" asp-action="Import" class="hrms-nav-link hrms-nav-sub @(isEmpActive && empAction == "Import" ? "active" : "")">
+                        <i class="bi bi-upload"></i><span>Bulk Import</span>
+                    </a>
+                }
+            </div>
+        }
+        @if (User.HasPermission("RECRUITMENT.VIEW"))
+        {
+            var isRecActive = string.Equals(currentController, "Recruitment", StringComparison.OrdinalIgnoreCase);
+            var recAction = ViewContext.RouteData.Values["action"]?.ToString() ?? string.Empty;
+            <a class="hrms-nav-link @(isRecActive ? "active" : "")" data-bs-toggle="collapse" href="#recMenuCollapse" role="button" aria-expanded="@(isRecActive ? "true" : "false")">
+                <i class="bi bi-briefcase"></i><span>Recruitment</span>
+                <i class="bi bi-chevron-down ms-auto small"></i>
+            </a>
+            <div class="collapse @(isRecActive ? "show" : "")" id="recMenuCollapse">
+                <a asp-controller="Recruitment" asp-action="Index" class="hrms-nav-link hrms-nav-sub @(isRecActive && recAction == "Index" ? "active" : "")">
+                    <i class="bi bi-megaphone"></i><span>Job Requisitions</span>
+                </a>
+                <a asp-controller="Recruitment" asp-action="Pipeline" class="hrms-nav-link hrms-nav-sub @(isRecActive && recAction == "Pipeline" ? "active" : "")">
+                    <i class="bi bi-kanban"></i><span>Applicant Pipeline</span>
+                </a>
+                <a asp-controller="Recruitment" asp-action="Candidates" class="hrms-nav-link hrms-nav-sub @(isRecActive && recAction == "Candidates" ? "active" : "")">
+                    <i class="bi bi-person-lines-fill"></i><span>Candidate Pool</span>
+                </a>
+                <a asp-controller="Recruitment" asp-action="Interviews" class="hrms-nav-link hrms-nav-sub @(isRecActive && recAction == "Interviews" ? "active" : "")">
+                    <i class="bi bi-camera-video"></i><span>Interviews</span>
+                </a>
+                <a asp-controller="Recruitment" asp-action="Offers" class="hrms-nav-link hrms-nav-sub @(isRecActive && recAction == "Offers" ? "active" : "")">
+                    <i class="bi bi-file-earmark-check"></i><span>Job Offers</span>
+                </a>
+            </div>
+        }
+
+        <div class="hrms-nav-section">Time &amp; Compensation</div>
+        @if (User.HasPermission("ATTENDANCE.VIEW"))
+        {
+            var isAttActive = string.Equals(currentController, "Attendance", StringComparison.OrdinalIgnoreCase);
+            var attAction = ViewContext.RouteData.Values["action"]?.ToString() ?? string.Empty;
+            <a class="hrms-nav-link @(isAttActive ? "active" : "")" data-bs-toggle="collapse" href="#attMenuCollapse" role="button" aria-expanded="@(isAttActive ? "true" : "false")">
+                <i class="bi bi-clock-history"></i><span>Attendance &amp; Shifts</span>
+                <i class="bi bi-chevron-down ms-auto small"></i>
+            </a>
+            <div class="collapse @(isAttActive ? "show" : "")" id="attMenuCollapse">
+                <a asp-controller="Attendance" asp-action="Index" class="hrms-nav-link hrms-nav-sub @(isAttActive && attAction == "Index" ? "active" : "")">
+                    <i class="bi bi-calendar-check"></i><span>Daily Register</span>
+                </a>
+                <a asp-controller="Attendance" asp-action="MonthlyReport" class="hrms-nav-link hrms-nav-sub @(isAttActive && attAction == "MonthlyReport" ? "active" : "")">
+                    <i class="bi bi-file-earmark-bar-graph"></i><span>Monthly Report</span>
+                </a>
+                <a asp-controller="Attendance" asp-action="EmployeeCalendar" class="hrms-nav-link hrms-nav-sub @(isAttActive && attAction == "EmployeeCalendar" ? "active" : "")">
+                    <i class="bi bi-calendar3"></i><span>Attendance Calendar</span>
+                </a>
+                <a asp-controller="Attendance" asp-action="Roster" class="hrms-nav-link hrms-nav-sub @(isAttActive && attAction == "Roster" ? "active" : "")">
+                    <i class="bi bi-calendar2-week"></i><span>Shift Roster</span>
+                </a>
+                <a asp-controller="Attendance" asp-action="Holidays" class="hrms-nav-link hrms-nav-sub @(isAttActive && attAction == "Holidays" ? "active" : "")">
+                    <i class="bi bi-sun"></i><span>Holiday Calendar</span>
+                </a>
+                <a asp-controller="Attendance" asp-action="Regularizations" class="hrms-nav-link hrms-nav-sub @(isAttActive && attAction == "Regularizations" ? "active" : "")">
+                    <i class="bi bi-check2-square"></i><span>Regularization &amp; OT</span>
+                </a>
+                @if (User.HasPermission("ATTENDANCE.MANAGE"))
+                {
+                    <a asp-controller="Attendance" asp-action="Import" class="hrms-nav-link hrms-nav-sub @(isAttActive && attAction == "Import" ? "active" : "")">
+                        <i class="bi bi-upload"></i><span>Bulk Import</span>
+                    </a>
+                }
+            </div>
+        }
+        @if (User.HasPermission("LEAVE.VIEW"))
+        {
+            var isLeaveActive = string.Equals(currentController, "Leave", StringComparison.OrdinalIgnoreCase);
+            var leaveAction = ViewContext.RouteData.Values["action"]?.ToString() ?? string.Empty;
+            <a class="hrms-nav-link @(isLeaveActive ? "active" : "")" data-bs-toggle="collapse" href="#leaveMenuCollapse" role="button" aria-expanded="@(isLeaveActive ? "true" : "false")">
+                <i class="bi bi-calendar2-check"></i><span>Leave Management</span>
+                <i class="bi bi-chevron-down ms-auto small"></i>
+            </a>
+            <div class="collapse @(isLeaveActive ? "show" : "")" id="leaveMenuCollapse">
+                <a asp-controller="Leave" asp-action="Index" class="hrms-nav-link hrms-nav-sub @(isLeaveActive && leaveAction == "Index" ? "active" : "")">
+                    <i class="bi bi-card-checklist"></i><span>Leave Applications</span>
+                </a>
+                <a asp-controller="Leave" asp-action="Balances" class="hrms-nav-link hrms-nav-sub @(isLeaveActive && leaveAction == "Balances" ? "active" : "")">
+                    <i class="bi bi-wallet2"></i><span>Leave Balances</span>
+                </a>
+                <a asp-controller="Leave" asp-action="Calendar" class="hrms-nav-link hrms-nav-sub @(isLeaveActive && leaveAction == "Calendar" ? "active" : "")">
+                    <i class="bi bi-calendar-range"></i><span>Team Leave Calendar</span>
+                </a>
+                <a asp-controller="Leave" asp-action="Encashment" class="hrms-nav-link hrms-nav-sub @(isLeaveActive && leaveAction == "Encashment" ? "active" : "")">
+                    <i class="bi bi-coin"></i><span>Leave Encashment</span>
+                </a>
+                <a asp-controller="Leave" asp-action="Types" class="hrms-nav-link hrms-nav-sub @(isLeaveActive && leaveAction == "Types" ? "active" : "")">
+                    <i class="bi bi-sliders"></i><span>Leave Policies</span>
+                </a>
+            </div>
+        }
+        @if (User.HasPermission("PAYROLL.VIEW"))
+        {
+            var isPayActive = string.Equals(currentController, "Payroll", StringComparison.OrdinalIgnoreCase);
+            var payAction = ViewContext.RouteData.Values["action"]?.ToString() ?? string.Empty;
+            <a class="hrms-nav-link @(isPayActive ? "active" : "")" data-bs-toggle="collapse" href="#payrollMenuCollapse" role="button" aria-expanded="@(isPayActive ? "true" : "false")">
+                <i class="bi bi-cash-stack"></i><span>Payroll</span>
+                <i class="bi bi-chevron-down ms-auto small"></i>
+            </a>
+            <div class="collapse @(isPayActive ? "show" : "")" id="payrollMenuCollapse">
+                <a asp-controller="Payroll" asp-action="Index" class="hrms-nav-link hrms-nav-sub @(isPayActive && (payAction == "Index" || payAction == "Details" || payAction == "Payslip") ? "active" : "")">
+                    <i class="bi bi-receipt-cutoff"></i><span>Payroll Runs</span>
+                </a>
+                @if (User.HasPermission("PAYROLL.MANAGE"))
+                {
+                    <a asp-controller="Payroll" asp-action="Structures" class="hrms-nav-link hrms-nav-sub @(isPayActive && payAction == "Structures" ? "active" : "")">
+                        <i class="bi bi-diagram-2"></i><span>Salary Structures</span>
+                    </a>
+                    <a asp-controller="Payroll" asp-action="Components" class="hrms-nav-link hrms-nav-sub @(isPayActive && payAction == "Components" ? "active" : "")">
+                        <i class="bi bi-sliders2"></i><span>Components &amp; Tax Slabs</span>
+                    </a>
+                }
+            </div>
+        }
+        @if (User.HasPermission("LOAN.VIEW") || User.HasPermission("EXPENSE.VIEW"))
+        {
+            var isLoanExpActive = new[] { "Loan", "Expense" }.Contains(currentController, StringComparer.OrdinalIgnoreCase);
+            var leAction = ViewContext.RouteData.Values["action"]?.ToString() ?? string.Empty;
+            <a class="hrms-nav-link @(isLoanExpActive ? "active" : "")" data-bs-toggle="collapse" href="#loanExpMenuCollapse" role="button" aria-expanded="@(isLoanExpActive ? "true" : "false")">
+                <i class="bi bi-receipt"></i><span>Loans &amp; Expenses</span>
+                <i class="bi bi-chevron-down ms-auto small"></i>
+            </a>
+            <div class="collapse @(isLoanExpActive ? "show" : "")" id="loanExpMenuCollapse">
+                @if (User.HasPermission("LOAN.VIEW"))
+                {
+                    <a asp-controller="Loan" asp-action="Index" class="hrms-nav-link hrms-nav-sub @(currentController == "Loan" && (leAction == "Index" || leAction == "Details") ? "active" : "")">
+                        <i class="bi bi-bank"></i><span>Loans &amp; Advances</span>
+                    </a>
+                    @if (User.HasPermission("LOAN.MANAGE"))
+                    {
+                        <a asp-controller="Loan" asp-action="Types" class="hrms-nav-link hrms-nav-sub @(currentController == "Loan" && leAction == "Types" ? "active" : "")">
+                            <i class="bi bi-sliders"></i><span>Loan Policies</span>
+                        </a>
+                    }
+                }
+                @if (User.HasPermission("EXPENSE.VIEW"))
+                {
+                    <a asp-controller="Expense" asp-action="Index" class="hrms-nav-link hrms-nav-sub @(currentController == "Expense" && leAction == "Index" ? "active" : "")">
+                        <i class="bi bi-credit-card-2-back"></i><span>Expense Claims</span>
+                    </a>
+                    @if (User.HasPermission("EXPENSE.MANAGE"))
+                    {
+                        <a asp-controller="Expense" asp-action="Categories" class="hrms-nav-link hrms-nav-sub @(currentController == "Expense" && leAction == "Categories" ? "active" : "")">
+                            <i class="bi bi-tags"></i><span>Expense Categories</span>
+                        </a>
+                    }
+                }
+            </div>
+        }
+
+        <div class="hrms-nav-section">Talent, Assets &amp; Compliance</div>
+        @if (User.HasPermission("PERFORMANCE.VIEW") || User.HasPermission("TRAINING.VIEW"))
+        {
+            var isPerfTrnActive = new[] { "Performance", "Training" }.Contains(currentController, StringComparer.OrdinalIgnoreCase);
+            var ptAction = ViewContext.RouteData.Values["action"]?.ToString() ?? string.Empty;
+            <a class="hrms-nav-link @(isPerfTrnActive ? "active" : "")" data-bs-toggle="collapse" href="#perfTrnMenuCollapse" role="button" aria-expanded="@(isPerfTrnActive ? "true" : "false")">
+                <i class="bi bi-graph-up-arrow"></i><span>Performance &amp; Training</span>
+                <i class="bi bi-chevron-down ms-auto small"></i>
+            </a>
+            <div class="collapse @(isPerfTrnActive ? "show" : "")" id="perfTrnMenuCollapse">
+                @if (User.HasPermission("PERFORMANCE.VIEW"))
+                {
+                    <a asp-controller="Performance" asp-action="Index" class="hrms-nav-link hrms-nav-sub @(currentController == "Performance" && ptAction == "Index" ? "active" : "")">
+                        <i class="bi bi-award"></i><span>Appraisals</span>
+                    </a>
+                    <a asp-controller="Performance" asp-action="Goals" class="hrms-nav-link hrms-nav-sub @(currentController == "Performance" && ptAction == "Goals" ? "active" : "")">
+                        <i class="bi bi-bullseye"></i><span>Goals &amp; KPIs</span>
+                    </a>
+                    @if (User.HasPermission("PERFORMANCE.MANAGE"))
+                    {
+                        <a asp-controller="Performance" asp-action="Cycles" class="hrms-nav-link hrms-nav-sub @(currentController == "Performance" && ptAction == "Cycles" ? "active" : "")">
+                            <i class="bi bi-calendar-range"></i><span>Appraisal Cycles</span>
+                        </a>
+                    }
+                }
+                @if (User.HasPermission("TRAINING.VIEW"))
+                {
+                    <a asp-controller="Training" asp-action="Index" class="hrms-nav-link hrms-nav-sub @(currentController == "Training" && ptAction == "Index" ? "active" : "")">
+                        <i class="bi bi-mortarboard"></i><span>Training Programs</span>
+                    </a>
+                    <a asp-controller="Training" asp-action="Enrollments" class="hrms-nav-link hrms-nav-sub @(currentController == "Training" && ptAction == "Enrollments" ? "active" : "")">
+                        <i class="bi bi-patch-check"></i><span>Enrollments &amp; Certs</span>
+                    </a>
+                }
+            </div>
+        }
+        @if (User.HasPermission("ASSET.VIEW") || User.HasPermission("DOCUMENT.VIEW"))
+        {
+            var isAssetDocActive = new[] { "Asset", "Document" }.Contains(currentController, StringComparer.OrdinalIgnoreCase);
+            var adAction = ViewContext.RouteData.Values["action"]?.ToString() ?? string.Empty;
+            <a class="hrms-nav-link @(isAssetDocActive ? "active" : "")" data-bs-toggle="collapse" href="#assetDocMenuCollapse" role="button" aria-expanded="@(isAssetDocActive ? "true" : "false")">
+                <i class="bi bi-laptop"></i><span>Assets &amp; Documents</span>
+                <i class="bi bi-chevron-down ms-auto small"></i>
+            </a>
+            <div class="collapse @(isAssetDocActive ? "show" : "")" id="assetDocMenuCollapse">
+                @if (User.HasPermission("ASSET.VIEW"))
+                {
+                    <a asp-controller="Asset" asp-action="Index" class="hrms-nav-link hrms-nav-sub @(currentController == "Asset" && (adAction == "Index" || adAction == "Details") ? "active" : "")">
+                        <i class="bi bi-pc-display"></i><span>Asset Inventory</span>
+                    </a>
+                    <a asp-controller="Asset" asp-action="Allocations" class="hrms-nav-link hrms-nav-sub @(currentController == "Asset" && adAction == "Allocations" ? "active" : "")">
+                        <i class="bi bi-arrow-left-right"></i><span>Asset Allocations</span>
+                    </a>
+                    @if (User.HasPermission("ASSET.MANAGE"))
+                    {
+                        <a asp-controller="Asset" asp-action="Maintenance" class="hrms-nav-link hrms-nav-sub @(currentController == "Asset" && adAction == "Maintenance" ? "active" : "")">
+                            <i class="bi bi-tools"></i><span>Asset Maintenance</span>
+                        </a>
+                        <a asp-controller="Asset" asp-action="Categories" class="hrms-nav-link hrms-nav-sub @(currentController == "Asset" && adAction == "Categories" ? "active" : "")">
+                            <i class="bi bi-tags"></i><span>Asset Categories</span>
+                        </a>
+                    }
+                }
+                @if (User.HasPermission("DOCUMENT.VIEW"))
+                {
+                    <a asp-controller="Document" asp-action="Index" class="hrms-nav-link hrms-nav-sub @(currentController == "Document" && adAction == "Index" ? "active" : "")">
+                        <i class="bi bi-folder2-open"></i><span>Policy Repository</span>
+                    </a>
+                    <a asp-controller="Document" asp-action="EmployeeVault" class="hrms-nav-link hrms-nav-sub @(currentController == "Document" && adAction == "EmployeeVault" ? "active" : "")">
+                        <i class="bi bi-safe2"></i><span>Employee Doc Vault</span>
+                    </a>
+                    <a asp-controller="Document" asp-action="Acknowledgments" class="hrms-nav-link hrms-nav-sub @(currentController == "Document" && adAction == "Acknowledgments" ? "active" : "")">
+                        <i class="bi bi-check2-square"></i><span>Policy Sign-Offs</span>
+                    </a>
+                    @if (User.HasPermission("DOCUMENT.MANAGE"))
+                    {
+                        <a asp-controller="Document" asp-action="Categories" class="hrms-nav-link hrms-nav-sub @(currentController == "Document" && adAction == "Categories" ? "active" : "")">
+                            <i class="bi bi-bookmarks"></i><span>Doc Categories</span>
+                        </a>
+                    }
+                }
+            </div>
+        }
+        @if (User.HasPermission("EXIT.VIEW"))
+        {
+            var isExitActive = string.Equals(currentController, "Exit", StringComparison.OrdinalIgnoreCase);
+            var exitAction = ViewContext.RouteData.Values["action"]?.ToString() ?? string.Empty;
+            <a class="hrms-nav-link @(isExitActive ? "active" : "")" data-bs-toggle="collapse" href="#exitMenuCollapse" role="button" aria-expanded="@(isExitActive ? "true" : "false")">
+                <i class="bi bi-box-arrow-right"></i><span>Separation &amp; Exit</span>
+                <i class="bi bi-chevron-down ms-auto small"></i>
+            </a>
+            <div class="collapse @(isExitActive ? "show" : "")" id="exitMenuCollapse">
+                <a asp-controller="Exit" asp-action="Index" class="hrms-nav-link hrms-nav-sub @(isExitActive && (exitAction == "Index" || exitAction == "Details") ? "active" : "")">
+                    <i class="bi bi-person-dash"></i><span>Separation Requests</span>
+                </a>
+                @if (User.HasPermission("EXIT.MANAGE"))
+                {
+                    <a asp-controller="Exit" asp-action="Interviews" class="hrms-nav-link hrms-nav-sub @(isExitActive && exitAction == "Interviews" ? "active" : "")">
+                        <i class="bi bi-chat-square-quote"></i><span>Exit Interviews</span>
+                    </a>
+                    <a asp-controller="Exit" asp-action="Templates" class="hrms-nav-link hrms-nav-sub @(isExitActive && exitAction == "Templates" ? "active" : "")">
+                        <i class="bi bi-list-check"></i><span>Clearance Templates</span>
+                    </a>
+                }
+            </div>
+        }
+        @if (User.HasPermission("REPORTS.VIEW"))
+        {
+            var isRepActive = string.Equals(currentController, "Reports", StringComparison.OrdinalIgnoreCase);
+            var repAction = ViewContext.RouteData.Values["action"]?.ToString() ?? string.Empty;
+            <a class="hrms-nav-link @(isRepActive ? "active" : "")" data-bs-toggle="collapse" href="#reportsMenuCollapse" role="button" aria-expanded="@(isRepActive ? "true" : "false")">
+                <i class="bi bi-bar-chart-line"></i><span>Reports &amp; Analytics</span>
+                <i class="bi bi-chevron-down ms-auto small"></i>
+            </a>
+            <div class="collapse @(isRepActive ? "show" : "")" id="reportsMenuCollapse">
+                <a asp-controller="Reports" asp-action="Index" class="hrms-nav-link hrms-nav-sub @(isRepActive && repAction == "Index" ? "active" : "")">
+                    <i class="bi bi-pie-chart"></i><span>Analytics Hub</span>
+                </a>
+                <a asp-controller="Reports" asp-action="Workforce" class="hrms-nav-link hrms-nav-sub @(isRepActive && repAction == "Workforce" ? "active" : "")">
+                    <i class="bi bi-people"></i><span>Workforce Report</span>
+                </a>
+                <a asp-controller="Reports" asp-action="AttendanceLeave" class="hrms-nav-link hrms-nav-sub @(isRepActive && repAction == "AttendanceLeave" ? "active" : "")">
+                    <i class="bi bi-clock-history"></i><span>Attendance &amp; Leave</span>
+                </a>
+                <a asp-controller="Reports" asp-action="PayrollCost" class="hrms-nav-link hrms-nav-sub @(isRepActive && repAction == "PayrollCost" ? "active" : "")">
+                    <i class="bi bi-cash-stack"></i><span>Payroll Cost Report</span>
+                </a>
+                <a asp-controller="Reports" asp-action="TalentRecruitment" class="hrms-nav-link hrms-nav-sub @(isRepActive && repAction == "TalentRecruitment" ? "active" : "")">
+                    <i class="bi bi-award"></i><span>Talent &amp; Recruitment</span>
+                </a>
+                <a asp-controller="Reports" asp-action="FinancialCompliance" class="hrms-nav-link hrms-nav-sub @(isRepActive && repAction == "FinancialCompliance" ? "active" : "")">
+                    <i class="bi bi-shield-check"></i><span>Financial &amp; Compliance</span>
+                </a>
+            </div>
+        }
+        <a asp-controller="Notifications" asp-action="Index" class="hrms-nav-link @IsActive("Notifications")">
+            <i class="bi bi-bell"></i><span>Notification Center</span>
+        </a>
+        @if (User.HasPermission("WORKFLOW.VIEW") || User.HasPermission("ADMIN.VIEW"))
+        {
+            var isAdminActive = new[] { "Workflow", "SystemAdmin" }.Contains(currentController, StringComparer.OrdinalIgnoreCase);
+            var sysAction = ViewContext.RouteData.Values["action"]?.ToString() ?? string.Empty;
+            <a class="hrms-nav-link @(isAdminActive ? "active" : "")" data-bs-toggle="collapse" href="#adminMenuCollapse" role="button" aria-expanded="@(isAdminActive ? "true" : "false")">
+                <i class="bi bi-shield-lock"></i><span>Workflows &amp; Admin</span>
+                <i class="bi bi-chevron-down ms-auto small"></i>
+            </a>
+            <div class="collapse @(isAdminActive ? "show" : "")" id="adminMenuCollapse">
+                @if (User.HasPermission("WORKFLOW.VIEW"))
+                {
+                    <a asp-controller="Workflow" asp-action="Index" class="hrms-nav-link hrms-nav-sub @(currentController == "Workflow" ? "active" : "")">
+                        <i class="bi bi-diagram-3"></i><span>Workflow Engine</span>
+                    </a>
+                }
+                @if (User.HasPermission("ADMIN.VIEW"))
+                {
+                    <a asp-controller="SystemAdmin" asp-action="AuditLogs" class="hrms-nav-link hrms-nav-sub @(currentController == "SystemAdmin" && sysAction == "AuditLogs" ? "active" : "")">
+                        <i class="bi bi-journal-check"></i><span>Audit &amp; Security Logs</span>
+                    </a>
+                    <a asp-controller="SystemAdmin" asp-action="Settings" class="hrms-nav-link hrms-nav-sub @(currentController == "SystemAdmin" && sysAction == "Settings" ? "active" : "")">
+                        <i class="bi bi-sliders"></i><span>System Settings</span>
+                    </a>
+                    <a asp-controller="SystemAdmin" asp-action="AccessControl" class="hrms-nav-link hrms-nav-sub @(currentController == "SystemAdmin" && sysAction == "AccessControl" ? "active" : "")">
+                        <i class="bi bi-person-gear"></i><span>Users &amp; Roles</span>
+                    </a>
+                    <a asp-controller="SystemAdmin" asp-action="SystemHealth" class="hrms-nav-link hrms-nav-sub @(currentController == "SystemAdmin" && sysAction == "SystemHealth" ? "active" : "")">
+                        <i class="bi bi-heart-pulse"></i><span>System Health &amp; Ops</span>
+                    </a>
+                }
+            </div>
+        }
+    </nav>
+</aside>

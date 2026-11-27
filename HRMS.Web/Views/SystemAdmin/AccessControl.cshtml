@@ -1,0 +1,282 @@
+@using System.Text.Json
+@model AccessControlPageViewModel
+@{
+    ViewData["Title"] = "Users, Roles & Access Control";
+    ViewData["BreadcrumbParent"] = "Administration";
+    var camelOpts = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+    var rolePermMap = Model.Roles.ToDictionary(
+        r => r.RoleId,
+        r => Model.RolePermissions.Where(lp => lp.RoleId == r.RoleId).Select(lp => lp.PermissionId).ToList());
+    var permGroups = Model.Permissions.GroupBy(p => p.ModuleName).OrderBy(g => g.Key).ToList();
+}
+
+@section PageActions {
+    @if (Model.CanManageAdmin)
+    {
+        <button type="button" class="btn btn-primary btn-sm" onclick="HrmsAdmin.openUserModal()">
+            <i class="bi bi-person-plus me-1"></i>Create User Account
+        </button>
+    }
+}
+
+<ul class="nav nav-tabs mb-3" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tabUsers" type="button" role="tab">
+            <i class="bi bi-people me-1"></i>User Accounts (@Model.Users.Count)
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabRoles" type="button" role="tab">
+            <i class="bi bi-shield-lock me-1"></i>Role Permission Matrix (@Model.Roles.Count Roles)
+        </button>
+    </li>
+</ul>
+
+<div class="tab-content">
+    <!-- Users Tab -->
+    <div class="tab-pane fade show active" id="tabUsers" role="tabpanel">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle hrms-admin-datatable w-100">
+                        <thead>
+                            <tr>
+                                <th>User / Login</th>
+                                <th>Linked Employee</th>
+                                <th>Assigned Role</th>
+                                <th>Last Login (UTC)</th>
+                                <th>Security State</th>
+                                @if (Model.CanManageAdmin)
+                                {
+                                    <th class="text-end">Actions</th>
+                                }
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var u in Model.Users)
+                            {
+                                var isLocked = u.LockoutEndUtc.HasValue && u.LockoutEndUtc.Value > DateTime.UtcNow;
+                                <tr>
+                                    <td class="small">
+                                        <div class="fw-semibold">@u.FullName</div>
+                                        <div class="text-body-secondary font-monospace">@u.Username &bull; @u.Email</div>
+                                    </td>
+                                    <td class="small">
+                                        @if (!string.IsNullOrEmpty(u.EmployeeCode))
+                                        {
+                                            <span class="font-monospace">@u.EmployeeCode</span>
+                                            <div class="text-body-secondary">@(u.BranchName ?? "-")</div>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-body-secondary">System Account</span>
+                                        }
+                                    </td>
+                                    <td class="small">
+                                        <span class="badge bg-primary-subtle text-primary-emphasis">@u.RoleNames</span>
+                                    </td>
+                                    <td class="small">
+                                        @if (u.LastLoginUtc.HasValue)
+                                        {
+                                            <div>@u.LastLoginUtc.Value.ToString("dd MMM yyyy HH:mm")</div>
+                                            <div class="text-body-secondary font-monospace">@u.LastLoginIp</div>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-body-secondary">Never signed in</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (!u.IsActive)
+                                        {
+                                            <span class="badge bg-secondary-subtle text-secondary-emphasis">Inactive</span>
+                                        }
+                                        else if (isLocked)
+                                        {
+                                            <span class="badge bg-danger">Locked Out</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-success-subtle text-success-emphasis">Active</span>
+                                        }
+                                        @if (u.MustChangePassword)
+                                        {
+                                            <span class="badge bg-warning-subtle text-warning-emphasis ms-1">Pwd Reset Due</span>
+                                        }
+                                    </td>
+                                    @if (Model.CanManageAdmin)
+                                    {
+                                        <td class="text-end text-nowrap">
+                                            <button type="button" class="btn btn-sm btn-outline-secondary" title="Edit Account"
+                                                    onclick='HrmsAdmin.openUserModal(@Html.Raw(JsonSerializer.Serialize(u, camelOpts)))'>
+                                                <i class="bi bi-pencil"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-outline-warning" title="Reset Password"
+                                                    onclick='HrmsAdmin.toggleUserStatus(@u.UserId, "ResetPassword", @Html.Raw(JsonSerializer.Serialize(u.Username)))'>
+                                                <i class="bi bi-key"></i>
+                                            </button>
+                                            @if (isLocked || u.FailedLoginCount > 0)
+                                            {
+                                                <button type="button" class="btn btn-sm btn-outline-info" title="Unlock Account"
+                                                        onclick='HrmsAdmin.toggleUserStatus(@u.UserId, "Unlock", @Html.Raw(JsonSerializer.Serialize(u.Username)))'>
+                                                    <i class="bi bi-unlock"></i>
+                                                </button>
+                                            }
+                                            <button type="button" class="btn btn-sm @(u.IsActive ? "btn-outline-danger" : "btn-outline-success")"
+                                                    title="@(u.IsActive ? "Deactivate" : "Activate")"
+                                                    onclick='HrmsAdmin.toggleUserStatus(@u.UserId, "@(u.IsActive ? "Deactivate" : "Activate")", @Html.Raw(JsonSerializer.Serialize(u.Username)))'>
+                                                <i class="bi @(u.IsActive ? "bi-person-slash" : "bi-person-check")"></i>
+                                            </button>
+                                        </td>
+                                    }
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Role Permission Matrix Tab -->
+    <div class="tab-pane fade" id="tabRoles" role="tabpanel">
+        <div class="card border-0 shadow-sm mb-3">
+            <div class="card-body d-flex flex-wrap justify-content-between align-items-center gap-3">
+                <div class="d-flex align-items-center gap-2">
+                    <label class="form-label small fw-semibold mb-0">Inspect / Configure Role:</label>
+                    <select id="matrixRoleSelect" class="form-select form-select-sm" style="min-width: 240px;" onchange="HrmsAdmin.loadRoleMatrix()">
+                        @foreach (var r in Model.Roles)
+                        {
+                            <option value="@r.RoleId">@r.RoleName (@r.AssignedUserCount users, @r.PermissionCount perms)</option>
+                        }
+                    </select>
+                </div>
+                @if (Model.CanManageAdmin)
+                {
+                    <button type="button" class="btn btn-primary btn-sm" onclick="HrmsAdmin.saveRoleMatrix()">
+                        <i class="bi bi-check2-circle me-1"></i>Save Role Permissions
+                    </button>
+                }
+            </div>
+        </div>
+
+        <div class="row g-3">
+            @foreach (var grp in permGroups)
+            {
+                <div class="col-md-6 col-xl-4">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-header bg-transparent py-2 fw-semibold small text-primary">
+                            <i class="bi bi-shield-check me-1"></i>@grp.Key
+                        </div>
+                        <div class="card-body py-2">
+                            @foreach (var p in grp)
+                            {
+                                <div class="form-check py-1">
+                                    <input class="form-check-input perm-checkbox" type="checkbox" value="@p.PermissionId"
+                                           id="perm_@p.PermissionId" @(Model.CanManageAdmin ? "" : "disabled") />
+                                    <label class="form-check-label small" for="perm_@p.PermissionId">
+                                        <span class="fw-semibold font-monospace">@p.PermissionCode</span>
+                                        <div class="text-body-secondary" style="font-size: 0.75rem;">@p.Description</div>
+                                    </label>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@if (Model.CanManageAdmin)
+{
+    <div class="modal fade" id="adminUserModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="usrModalTitle">User Account</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="adminUserForm" onsubmit="event.preventDefault(); HrmsAdmin.submitAjaxForm('#adminUserForm', '@Url.Action("SaveUser")', '#adminUserModal');">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" id="usrId" name="UserId" value="0" />
+                    <div class="modal-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label small fw-semibold">Full Name <span class="text-danger">*</span></label>
+                                <input type="text" id="usrFullName" name="FullName" class="form-control" maxlength="120" required />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-semibold">Username <span class="text-danger">*</span></label>
+                                <input type="text" id="usrUsername" name="Username" class="form-control" maxlength="60" required />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-semibold">Email <span class="text-danger">*</span></label>
+                                <input type="email" id="usrEmail" name="Email" class="form-control" maxlength="120" required />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-semibold">Primary Role <span class="text-danger">*</span></label>
+                                <select id="usrRoleId" name="RoleId" class="form-select" required>
+                                    <option value="">-- Select Role --</option>
+                                    @foreach (var r in Model.Roles)
+                                    {
+                                        <option value="@r.RoleId">@r.RoleName</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-semibold">Link Employee Record</label>
+                                <select id="usrEmployeeId" name="EmployeeId" class="form-select">
+                                    <option value="">-- None (System User) --</option>
+                                    @foreach (var emp in Model.Employees)
+                                    {
+                                        <option value="@emp.EmployeeId">@emp.FullName (@emp.EmployeeCode)</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-semibold">Branch Scope</label>
+                                <select id="usrBranchId" name="BranchId" class="form-select">
+                                    <option value="">All / Company-Wide</option>
+                                    @foreach (var b in Model.Branches)
+                                    {
+                                        <option value="@b.BranchId">@b.BranchName</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="col-12" id="usrPasswordGroup">
+                                <label class="form-label small fw-semibold">Initial Password <span class="text-danger">*</span></label>
+                                <input type="password" id="usrPassword" name="InitialPassword" class="form-control" minlength="8" maxlength="100" />
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-check form-switch">
+                                    <input type="hidden" name="IsActive" value="false" />
+                                    <input class="form-check-input" type="checkbox" id="usrActive" name="IsActive" value="true" checked />
+                                    <label class="form-check-label small" for="usrActive">Account Active</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-check form-switch">
+                                    <input type="hidden" name="MustChangePassword" value="false" />
+                                    <input class="form-check-input" type="checkbox" id="usrMustChange" name="MustChangePassword" value="true" checked />
+                                    <label class="form-check-label small" for="usrMustChange">Force Password Change on Next Sign-In</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Save User Account</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <script>
+        window.HRMS_ROLE_PERMISSION_MAP = @Html.Raw(JsonSerializer.Serialize(rolePermMap));
+    </script>
+    <script src="~/js/system-admin.js" asp-append-version="true"></script>
+}

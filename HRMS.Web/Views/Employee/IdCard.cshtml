@@ -1,0 +1,49 @@
+@model EmployeeProfileViewModel
+@{
+    ViewData["Title"] = "Employee ID Card";
+    ViewData["BreadcrumbParent"] = "Employees";
+    var e = Model.Employee;
+}
+
+@section PageActions {
+    <div class="d-flex gap-2 d-print-none">
+        <button type="button" class="btn btn-primary btn-sm" onclick="window.print()"><i class="bi bi-printer me-1"></i>Print ID Card</button>
+        <a asp-action="Details" asp-route-id="@e.EmployeeId" class="btn btn-outline-secondary btn-sm">Back to Profile</a>
+    </div>
+}
+
+<div class="row justify-content-center py-3">
+    <div class="col-md-5 col-lg-4">
+        <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
+            <div class="p-4 text-white text-center" style="background: linear-gradient(135deg, #0f172a, #2563eb);">
+                <div class="small text-uppercase fw-semibold opacity-75 mb-1">@e.CompanyName</div>
+                <div class="fw-bold mb-3">CORPORATE IDENTITY CARD</div>
+                @if (!string.IsNullOrEmpty(e.PhotoPath))
+                {
+                    <img src="@e.PhotoPath" alt="@e.FullName" class="rounded-circle border border-3 border-white object-fit-cover shadow" style="width:104px;height:104px;" />
+                }
+                else
+                {
+                    <div class="hrms-avatar mx-auto border border-3 border-white" style="width:104px;height:104px;font-size:2rem;">
+                        @string.Join("", e.FullName.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(x => char.ToUpperInvariant(x[0])))
+                    </div>
+                }
+            </div>
+            <div class="card-body text-center p-4">
+                <h2 class="h5 fw-bold mb-1">@e.FullName</h2>
+                <div class="text-primary fw-semibold small mb-3">@e.DesignationTitle</div>
+                <table class="table table-sm table-borderless text-start small mb-3">
+                    <tr><td class="text-body-secondary">Employee ID</td><td class="fw-semibold">@e.EmployeeCode</td></tr>
+                    <tr><td class="text-body-secondary">Department</td><td class="fw-semibold">@e.DepartmentName</td></tr>
+                    <tr><td class="text-body-secondary">Branch</td><td class="fw-semibold">@e.BranchName</td></tr>
+                    <tr><td class="text-body-secondary">Blood Group</td><td class="fw-semibold">@(e.BloodGroup ?? "-")</td></tr>
+                    <tr><td class="text-body-secondary">Issued</td><td class="fw-semibold">@e.HireDate.ToString("MMM yyyy")</td></tr>
+                </table>
+                <div class="border-top pt-3 small text-body-secondary">
+                    <i class="bi bi-upc-scan fs-3 d-block mb-1"></i>
+                    @e.EmployeeCode-@e.CompanyId.ToString("D3")
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

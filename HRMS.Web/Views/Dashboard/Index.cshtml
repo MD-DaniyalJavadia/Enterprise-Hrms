@@ -1,0 +1,295 @@
+@using System.Text.Json
+@model DashboardViewModel
+@{
+    ViewData["Title"] = "Executive Dashboard";
+    ViewData["BreadcrumbParent"] = "Analytics";
+    var initialChartPayload = JsonSerializer.Serialize(new
+    {
+        departmentStats = Model.DepartmentStats,
+        genderStats = Model.GenderStats,
+        monthlyHiringStats = Model.MonthlyHiringStats,
+        attendanceAnalytics = Model.AttendanceAnalytics
+    });
+}
+
+@section PageActions {
+    <form id="dashboardFilterForm" class="d-flex flex-wrap align-items-center gap-2">
+        <select name="branchId" id="branchFilterSelect" class="form-select form-select-sm" style="min-width: 210px;">
+            <option value="">All Branches</option>
+            @foreach (var b in Model.Branches)
+            {
+                <option value="@b.BranchId" selected="@(Model.SelectedBranchId == b.BranchId)">@b.BranchName</option>
+            }
+        </select>
+        <input type="date" name="asOfDate" id="asOfDateFilter" class="form-control form-control-sm" value="@Model.AsOfDate.ToString("yyyy-MM-dd")" style="width: 155px;" />
+        <button type="button" id="refreshDashboardBtn" class="btn btn-primary btn-sm">
+            <i class="bi bi-arrow-clockwise me-1"></i>Refresh
+        </button>
+    </form>
+}
+
+<!-- KPI Row 1: Workforce Overview -->
+<div class="row g-3 mb-3">
+    <div class="col-6 col-md-4 col-xl-2">
+        <div class="card hrms-kpi-card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <span class="small text-body-secondary fw-medium">Total Employees</span>
+                    <span class="hrms-kpi-icon bg-primary-subtle text-primary"><i class="bi bi-people"></i></span>
+                </div>
+                <div class="h3 fw-bold mb-0" id="kpiTotalEmployees">@Model.Kpis.TotalEmployees</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-4 col-xl-2">
+        <div class="card hrms-kpi-card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <span class="small text-body-secondary fw-medium">Active</span>
+                    <span class="hrms-kpi-icon bg-success-subtle text-success"><i class="bi bi-person-check"></i></span>
+                </div>
+                <div class="h3 fw-bold mb-0 text-success" id="kpiActiveEmployees">@Model.Kpis.ActiveEmployees</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-4 col-xl-2">
+        <div class="card hrms-kpi-card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <span class="small text-body-secondary fw-medium">Inactive</span>
+                    <span class="hrms-kpi-icon bg-secondary-subtle text-secondary"><i class="bi bi-person-dash"></i></span>
+                </div>
+                <div class="h3 fw-bold mb-0" id="kpiInactiveEmployees">@Model.Kpis.InactiveEmployees</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-4 col-xl-2">
+        <div class="card hrms-kpi-card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <span class="small text-body-secondary fw-medium">New Hires (Mo)</span>
+                    <span class="hrms-kpi-icon bg-info-subtle text-info"><i class="bi bi-person-plus"></i></span>
+                </div>
+                <div class="h3 fw-bold mb-0" id="kpiNewHires">@Model.Kpis.NewHiresThisMonth</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-4 col-xl-2">
+        <div class="card hrms-kpi-card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <span class="small text-body-secondary fw-medium">Resigned (Mo)</span>
+                    <span class="hrms-kpi-icon bg-danger-subtle text-danger"><i class="bi bi-person-x"></i></span>
+                </div>
+                <div class="h3 fw-bold mb-0" id="kpiResigned">@Model.Kpis.ResignedEmployeesThisMonth</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-4 col-xl-2">
+        <div class="card hrms-kpi-card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <span class="small text-body-secondary fw-medium">On Leave Today</span>
+                    <span class="hrms-kpi-icon bg-warning-subtle text-warning"><i class="bi bi-calendar-event"></i></span>
+                </div>
+                <div class="h3 fw-bold mb-0" id="kpiOnLeave">@Model.Kpis.EmployeesOnLeaveToday</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- KPI Row 2: Daily Operations & Payroll Snapshot -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body d-flex align-items-center justify-content-between">
+                <div>
+                    <div class="small text-body-secondary">Today's Attendance</div>
+                    <div class="h4 fw-bold mb-0" id="kpiPresentToday">@Model.Kpis.PresentToday</div>
+                    <div class="small text-success">Checked in on schedule</div>
+                </div>
+                <span class="hrms-kpi-icon-lg bg-success-subtle text-success"><i class="bi bi-clock-history"></i></span>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body d-flex align-items-center justify-content-between">
+                <div>
+                    <div class="small text-body-secondary">Late Arrivals</div>
+                    <div class="h4 fw-bold mb-0 text-warning" id="kpiLateToday">@Model.Kpis.LateArrivalsToday</div>
+                    <div class="small text-body-secondary">Absent: <strong id="kpiAbsentToday">@Model.Kpis.AbsentToday</strong></div>
+                </div>
+                <span class="hrms-kpi-icon-lg bg-warning-subtle text-warning"><i class="bi bi-exclamation-circle"></i></span>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body d-flex align-items-center justify-content-between">
+                <div>
+                    <div class="small text-body-secondary">Pending Leave Requests</div>
+                    <div class="h4 fw-bold mb-0 text-primary" id="kpiPendingLeaves">@Model.Kpis.PendingLeaveRequests</div>
+                    <div class="small text-body-secondary">Awaiting manager/HR approval</div>
+                </div>
+                <span class="hrms-kpi-icon-lg bg-primary-subtle text-primary"><i class="bi bi-hourglass-split"></i></span>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <span class="small text-body-secondary">Payroll (@(string.IsNullOrWhiteSpace(Model.PayrollSummary.PeriodLabel) ? "Current" : Model.PayrollSummary.PeriodLabel))</span>
+                    <span class="badge bg-info-subtle text-info-emphasis">@Model.PayrollSummary.PayrollStatus</span>
+                </div>
+                <div class="h4 fw-bold mb-0" id="kpiPayrollNet">@Model.PayrollSummary.TotalNetPay.ToString("C0")</div>
+                <div class="small text-body-secondary">
+                    Gross: <span id="kpiPayrollGross">@Model.PayrollSummary.TotalGrossPay.ToString("C0")</span>
+                    &bull; <span id="kpiPayrollCount">@Model.PayrollSummary.ProcessedEmployees</span> staff
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Analytics Charts Row 1 -->
+<div class="row g-3 mb-4">
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-transparent border-bottom py-3 d-flex justify-content-between align-items-center">
+                <h2 class="h6 fw-bold mb-0">7-Day Attendance Analytics</h2>
+                <span class="small text-body-secondary">Present vs. Late vs. Absent</span>
+            </div>
+            <div class="card-body">
+                <canvas id="attendanceAnalyticsChart" height="110"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-transparent border-bottom py-3">
+                <h2 class="h6 fw-bold mb-0">Gender Distribution</h2>
+            </div>
+            <div class="card-body d-flex align-items-center justify-content-center">
+                <canvas id="genderDistributionChart" height="220"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Analytics Charts Row 2 -->
+<div class="row g-3 mb-4">
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-transparent border-bottom py-3">
+                <h2 class="h6 fw-bold mb-0">Department-Wise Headcount</h2>
+            </div>
+            <div class="card-body">
+                <canvas id="departmentStatsChart" height="140"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-transparent border-bottom py-3">
+                <h2 class="h6 fw-bold mb-0">Monthly Hiring &amp; Attrition (6 Months)</h2>
+            </div>
+            <div class="card-body">
+                <canvas id="monthlyHiringChart" height="140"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Milestones & Activity Row -->
+<div class="row g-3">
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-transparent border-bottom py-3">
+                <h2 class="h6 fw-bold mb-0"><i class="bi bi-cake2 me-2 text-primary"></i>Upcoming Birthdays (30 Days)</h2>
+            </div>
+            <div class="list-group list-group-flush" id="upcomingBirthdaysList">
+                @if (!Model.UpcomingBirthdays.Any())
+                {
+                    <div class="p-4 text-center text-body-secondary small">No upcoming birthdays in the next 30 days.</div>
+                }
+                else
+                {
+                    @foreach (var item in Model.UpcomingBirthdays)
+                    {
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="fw-semibold small">@item.FullName</div>
+                                <div class="text-body-secondary" style="font-size: 0.78rem;">@item.EmployeeCode &bull; @item.DepartmentName</div>
+                            </div>
+                            <span class="badge bg-primary-subtle text-primary-emphasis">@item.EventDate.ToString("MMM dd")</span>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-transparent border-bottom py-3">
+                <h2 class="h6 fw-bold mb-0"><i class="bi bi-award me-2 text-success"></i>Work Anniversaries (30 Days)</h2>
+            </div>
+            <div class="list-group list-group-flush" id="upcomingAnniversariesList">
+                @if (!Model.UpcomingAnniversaries.Any())
+                {
+                    <div class="p-4 text-center text-body-secondary small">No work anniversaries in the next 30 days.</div>
+                }
+                else
+                {
+                    @foreach (var item in Model.UpcomingAnniversaries)
+                    {
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="fw-semibold small">@item.FullName</div>
+                                <div class="text-body-secondary" style="font-size: 0.78rem;">@item.DepartmentName &bull; @item.YearsOfService yr(s)</div>
+                            </div>
+                            <span class="badge bg-success-subtle text-success-emphasis">@item.EventDate.ToString("MMM dd")</span>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-transparent border-bottom py-3">
+                <h2 class="h6 fw-bold mb-0"><i class="bi bi-activity me-2 text-info"></i>Recent Audit Activities</h2>
+            </div>
+            <div class="list-group list-group-flush" id="recentActivitiesList">
+                @if (!Model.RecentActivities.Any())
+                {
+                    <div class="p-4 text-center text-body-secondary small">No recent audit activity recorded.</div>
+                }
+                else
+                {
+                    @foreach (var act in Model.RecentActivities)
+                    {
+                        <div class="list-group-item py-2">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="badge bg-secondary-subtle text-secondary-emphasis">@act.ModuleName</span>
+                                <span class="text-body-secondary" style="font-size: 0.72rem;">@act.CreatedDate.ToString("MMM dd, HH:mm")</span>
+                            </div>
+                            <div class="small fw-medium mt-1">@act.Description</div>
+                            <div class="text-body-secondary" style="font-size: 0.74rem;">By @act.Username (@act.ActionType)</div>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        window.HRMS_INITIAL_DASHBOARD_DATA = @Html.Raw(initialChartPayload);
+    </script>
+    <script src="~/js/dashboard.js" asp-append-version="true"></script>
+}

@@ -1,0 +1,179 @@
+@model TalentRecruitmentReportPageViewModel
+@{
+    ViewData["Title"] = "Recruitment Pipeline & Talent Readiness Report";
+    ViewData["BreadcrumbParent"] = "Reports & Analytics";
+    var totalOpenings = Model.FunnelRows.Sum(x => x.OpeningsCount);
+    var totalApplicants = Model.FunnelRows.Sum(x => x.TotalApplicants);
+    var totalHired = Model.FunnelRows.Sum(x => x.HiredCount);
+    var completedAppraisals = Model.TalentRows.Count(x => x.AppraisalStatus is "ManagerReviewed" or "Completed");
+}
+
+@section PageActions {
+    <div class="d-flex flex-wrap gap-2">
+        <a asp-action="Index" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left me-1"></i>Analytics Hub
+        </a>
+        @if (Model.CanExport)
+        {
+            <button type="button" class="btn btn-outline-secondary btn-sm"
+                    onclick="HrmsReports.printReport('TalentRecruitment', 'Recruitment & Talent Readiness Report', @(Model.FunnelRows.Count + Model.TalentRows.Count), 'Talent Print')">
+                <i class="bi bi-printer me-1"></i>Print / PDF
+            </button>
+            <a asp-action="ExportRecruitmentFunnel" asp-route-departmentId="@Model.DepartmentId" class="btn btn-success btn-sm">
+                <i class="bi bi-download me-1"></i>Export Funnel CSV
+            </a>
+            <a asp-action="ExportTalentPerformance" asp-route-departmentId="@Model.DepartmentId" class="btn btn-outline-success btn-sm">
+                <i class="bi bi-download me-1"></i>Export Talent CSV
+            </a>
+        }
+    </div>
+}
+
+<div class="row g-3 mb-3">
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body py-3">
+                <div class="small text-body-secondary fw-semibold">Total Job Openings</div>
+                <div class="fs-4 fw-bold text-primary">@totalOpenings</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body py-3">
+                <div class="small text-info fw-semibold">Total Pipeline Applicants</div>
+                <div class="fs-4 fw-bold text-info">@totalApplicants</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body py-3">
+                <div class="small text-success fw-semibold">Hired Conversions</div>
+                <div class="fs-4 fw-bold text-success">@totalHired</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body py-3">
+                <div class="small text-warning fw-semibold">Appraisals Reviewed</div>
+                <div class="fs-4 fw-bold text-warning">@completedAppraisals / @Model.TalentRows.Count</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm mb-3">
+    <div class="card-body py-3">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label small fw-semibold">Department</label>
+                <select name="departmentId" class="form-select form-select-sm">
+                    <option value="">All Departments</option>
+                    @foreach (var d in Model.Departments)
+                    {
+                        <option value="@d.DepartmentId" selected="@(Model.DepartmentId == d.DepartmentId)">@d.DepartmentName</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-2 d-flex gap-2">
+                <button type="submit" class="btn btn-primary btn-sm flex-fill"><i class="bi bi-funnel me-1"></i>Filter</button>
+                <a asp-action="TalentRecruitment" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-counterclockwise"></i></a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-transparent py-3">
+        <h6 class="mb-0 fw-semibold"><i class="bi bi-funnel me-2 text-primary"></i>Recruitment Pipeline Funnel by Requisition</h6>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle hrms-rep-datatable w-100">
+                <thead>
+                    <tr>
+                        <th>Requisition</th>
+                        <th>Department / Branch</th>
+                        <th class="text-center">Openings</th>
+                        <th class="text-center">Applicants</th>
+                        <th class="text-center">Interviews</th>
+                        <th class="text-center">Offers</th>
+                        <th class="text-center">Hired</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var f in Model.FunnelRows)
+                    {
+                        <tr>
+                            <td class="small">
+                                <div class="fw-semibold">@f.JobTitle</div>
+                                <div class="text-body-secondary font-monospace">@f.RequisitionCode</div>
+                            </td>
+                            <td class="small">@f.DepartmentName &bull; @f.BranchName</td>
+                            <td class="text-center small fw-semibold">@f.OpeningsCount</td>
+                            <td class="text-center small">@f.TotalApplicants</td>
+                            <td class="text-center small text-primary">@f.InterviewStageCount</td>
+                            <td class="text-center small text-warning">@f.OfferStageCount</td>
+                            <td class="text-center small fw-bold text-success">@f.HiredCount</td>
+                            <td><span class="badge bg-info-subtle text-info-emphasis">@f.RequisitionStatus</span></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-transparent py-3">
+        <h6 class="mb-0 fw-semibold"><i class="bi bi-award me-2 text-success"></i>Employee Appraisal Ratings &amp; Training Completion</h6>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle hrms-rep-datatable w-100">
+                <thead>
+                    <tr>
+                        <th>Employee</th>
+                        <th>Department / Role</th>
+                        <th>Cycle</th>
+                        <th class="text-center">Self / Mgr / Final</th>
+                        <th>Band</th>
+                        <th class="text-center">Trainings (Done/Total)</th>
+                        <th class="text-end">Avg Score</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var t in Model.TalentRows)
+                    {
+                        <tr>
+                            <td class="small">
+                                <div class="fw-semibold">@t.EmployeeName</div>
+                                <div class="text-body-secondary font-monospace">@t.EmployeeCode</div>
+                            </td>
+                            <td class="small">
+                                <div>@t.DepartmentName</div>
+                                <div class="text-body-secondary">@t.DesignationTitle</div>
+                            </td>
+                            <td class="small">@t.LatestCycleName</td>
+                            <td class="text-center small font-monospace">
+                                @(t.SelfRating?.ToString("F1") ?? "-") / @(t.ManagerRating?.ToString("F1") ?? "-") / <strong>@(t.FinalRating?.ToString("F1") ?? "-")</strong>
+                            </td>
+                            <td class="small">@t.RatingBand</td>
+                            <td class="text-center small">@t.CompletedTrainings / @t.TotalEnrolledTrainings</td>
+                            <td class="text-end small font-monospace">@t.AvgTrainingScore.ToString("F1")%</td>
+                            <td><span class="badge bg-secondary-subtle text-secondary-emphasis">@t.AppraisalStatus</span></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/reports.js" asp-append-version="true"></script>
+}

@@ -1,0 +1,11 @@
+E:\enterprise-hrms---asp.net-core-mvc\HRMS.Models\bin\Debug\net8.0\HRMS.Models.deps.json
+E:\enterprise-hrms---asp.net-core-mvc\HRMS.Models\bin\Debug\net8.0\HRMS.Models.dll
+E:\enterprise-hrms---asp.net-core-mvc\HRMS.Models\bin\Debug\net8.0\HRMS.Models.pdb
+E:\enterprise-hrms---asp.net-core-mvc\HRMS.Models\obj\Debug\net8.0\HRMS.Models.GeneratedMSBuildEditorConfig.editorconfig
+E:\enterprise-hrms---asp.net-core-mvc\HRMS.Models\obj\Debug\net8.0\HRMS.Models.AssemblyInfoInputs.cache
+E:\enterprise-hrms---asp.net-core-mvc\HRMS.Models\obj\Debug\net8.0\HRMS.Models.AssemblyInfo.cs
+E:\enterprise-hrms---asp.net-core-mvc\HRMS.Models\obj\Debug\net8.0\HRMS.Models.csproj.CoreCompileInputs.cache
+E:\enterprise-hrms---asp.net-core-mvc\HRMS.Models\obj\Debug\net8.0\HRMS.Models.dll
+E:\enterprise-hrms---asp.net-core-mvc\HRMS.Models\obj\Debug\net8.0\refint\HRMS.Models.dll
+E:\enterprise-hrms---asp.net-core-mvc\HRMS.Models\obj\Debug\net8.0\HRMS.Models.pdb
+E:\enterprise-hrms---asp.net-core-mvc\HRMS.Models\obj\Debug\net8.0\ref\HRMS.Models.dll

@@ -1,0 +1,249 @@
+@model EmployeeFormViewModel
+@{
+    var isEdit = Model.EmployeeId > 0;
+}
+<form asp-action="@(isEdit ? "Edit" : "Create")" method="post" enctype="multipart/form-data" novalidate>
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="EmployeeId" />
+    <input type="hidden" asp-for="CompanyId" />
+    <input type="hidden" asp-for="PhotoPath" />
+
+    <div asp-validation-summary="ModelOnly" class="alert alert-danger small py-2"></div>
+
+    <div class="card border-0 shadow-sm mb-3">
+        <div class="card-header bg-transparent border-bottom py-3">
+            <ul class="nav nav-pills card-header-pills" role="tablist">
+                <li class="nav-item"><button class="nav-link active" data-bs-toggle="pill" data-bs-target="#tabOrg" type="button">1. Organization &amp; Job</button></li>
+                <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#tabPersonal" type="button">2. Personal &amp; Contact</button></li>
+                <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#tabCompensation" type="button">3. Compensation, Bank &amp; Tax</button></li>
+            </ul>
+        </div>
+        <div class="card-body p-4">
+            <div class="tab-content">
+                <div class="tab-pane fade show active" id="tabOrg">
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <label asp-for="EmployeeCode" class="form-label small fw-semibold"></label>
+                            <input asp-for="EmployeeCode" class="form-control" />
+                            <span asp-validation-for="EmployeeCode" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-3">
+                            <label asp-for="HireDate" class="form-label small fw-semibold"></label>
+                            <input asp-for="HireDate" class="form-control" type="date" />
+                            <span asp-validation-for="HireDate" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-3">
+                            <label asp-for="ConfirmationDate" class="form-label small fw-semibold"></label>
+                            <input asp-for="ConfirmationDate" class="form-control" type="date" />
+                        </div>
+                        <div class="col-md-3">
+                            <label asp-for="EmploymentStatus" class="form-label small fw-semibold"></label>
+                            <select asp-for="EmploymentStatus" class="form-select">
+                                <option value="1">Active</option>
+                                <option value="2">Probation</option>
+                                <option value="3">On Leave</option>
+                                <option value="4">Resigned</option>
+                                <option value="5">Terminated</option>
+                                <option value="6">Inactive</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label asp-for="BranchId" class="form-label small fw-semibold"></label>
+                            <select asp-for="BranchId" class="form-select hrms-select2">
+                                <option value="">Select Branch</option>
+                                @foreach (var b in Model.Branches) { <option value="@b.BranchId">@b.BranchName</option> }
+                            </select>
+                            <span asp-validation-for="BranchId" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-4">
+                            <label asp-for="DepartmentId" class="form-label small fw-semibold"></label>
+                            <select asp-for="DepartmentId" class="form-select hrms-select2">
+                                <option value="">Select Department</option>
+                                @foreach (var d in Model.Departments) { <option value="@d.DepartmentId">@d.DepartmentName</option> }
+                            </select>
+                            <span asp-validation-for="DepartmentId" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-4">
+                            <label asp-for="DesignationId" class="form-label small fw-semibold"></label>
+                            <select asp-for="DesignationId" class="form-select hrms-select2">
+                                <option value="">Select Designation</option>
+                                @foreach (var des in Model.Designations) { <option value="@des.DesignationId">@des.DesignationTitle</option> }
+                            </select>
+                            <span asp-validation-for="DesignationId" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-3">
+                            <label asp-for="ReportingManagerId" class="form-label small fw-semibold"></label>
+                            <select asp-for="ReportingManagerId" class="form-select hrms-select2">
+                                <option value="">None (Executive / Top)</option>
+                                @foreach (var m in Model.Managers) { <option value="@m.EmployeeId">@m.FullName (@m.EmployeeCode)</option> }
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label asp-for="JobPositionId" class="form-label small fw-semibold"></label>
+                            <select asp-for="JobPositionId" class="form-select hrms-select2">
+                                <option value="">Optional</option>
+                                @foreach (var p in Model.JobPositions) { <option value="@p.JobPositionId">@p.PositionTitle</option> }
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label asp-for="WorkLocationId" class="form-label small fw-semibold"></label>
+                            <select asp-for="WorkLocationId" class="form-select hrms-select2">
+                                <option value="">Optional</option>
+                                @foreach (var wl in Model.WorkLocations) { <option value="@wl.WorkLocationId">@wl.LocationName</option> }
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label asp-for="ShiftId" class="form-label small fw-semibold"></label>
+                            <select asp-for="ShiftId" class="form-select hrms-select2">
+                                <option value="">Default Shift</option>
+                                @foreach (var s in Model.Shifts) { <option value="@s.ShiftId">@s.ShiftName (@s.StartTimeText-@s.EndTimeText)</option> }
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tab-pane fade" id="tabPersonal">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label asp-for="FirstName" class="form-label small fw-semibold"></label>
+                            <input asp-for="FirstName" class="form-control" />
+                            <span asp-validation-for="FirstName" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-4">
+                            <label asp-for="MiddleName" class="form-label small fw-semibold"></label>
+                            <input asp-for="MiddleName" class="form-control" />
+                        </div>
+                        <div class="col-md-4">
+                            <label asp-for="LastName" class="form-label small fw-semibold"></label>
+                            <input asp-for="LastName" class="form-control" />
+                            <span asp-validation-for="LastName" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-3">
+                            <label asp-for="Gender" class="form-label small fw-semibold"></label>
+                            <select asp-for="Gender" class="form-select">
+                                <option value="Male">Male</option>
+                                <option value="Female">Female</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label asp-for="DateOfBirth" class="form-label small fw-semibold"></label>
+                            <input asp-for="DateOfBirth" class="form-control" type="date" />
+                            <span asp-validation-for="DateOfBirth" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-3">
+                            <label asp-for="MaritalStatus" class="form-label small fw-semibold"></label>
+                            <select asp-for="MaritalStatus" class="form-select">
+                                <option value="">Select</option>
+                                <option value="Single">Single</option>
+                                <option value="Married">Married</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label asp-for="BloodGroup" class="form-label small fw-semibold"></label>
+                            <input asp-for="BloodGroup" class="form-control" placeholder="e.g. O+" />
+                        </div>
+
+                        <div class="col-md-3">
+                            <label asp-for="Nationality" class="form-label small fw-semibold"></label>
+                            <input asp-for="Nationality" class="form-control" />
+                        </div>
+                        <div class="col-md-3">
+                            <label asp-for="NationalIdNumber" class="form-label small fw-semibold"></label>
+                            <input asp-for="NationalIdNumber" class="form-control" />
+                        </div>
+                        <div class="col-md-3">
+                            <label asp-for="WorkEmail" class="form-label small fw-semibold"></label>
+                            <input asp-for="WorkEmail" class="form-control" />
+                            <span asp-validation-for="WorkEmail" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-3">
+                            <label asp-for="PersonalEmail" class="form-label small fw-semibold"></label>
+                            <input asp-for="PersonalEmail" class="form-control" />
+                            <span asp-validation-for="PersonalEmail" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-3">
+                            <label asp-for="Phone" class="form-label small fw-semibold"></label>
+                            <input asp-for="Phone" class="form-control" />
+                        </div>
+                        <div class="col-md-3">
+                            <label asp-for="MobilePhone" class="form-label small fw-semibold"></label>
+                            <input asp-for="MobilePhone" class="form-control" />
+                        </div>
+                        <div class="col-md-3">
+                            <label asp-for="City" class="form-label small fw-semibold"></label>
+                            <input asp-for="City" class="form-control" />
+                        </div>
+                        <div class="col-md-3">
+                            <label asp-for="Country" class="form-label small fw-semibold"></label>
+                            <input asp-for="Country" class="form-control" />
+                        </div>
+
+                        <div class="col-md-6">
+                            <label asp-for="CurrentAddress" class="form-label small fw-semibold"></label>
+                            <textarea asp-for="CurrentAddress" class="form-control" rows="2"></textarea>
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="PermanentAddress" class="form-label small fw-semibold"></label>
+                            <textarea asp-for="PermanentAddress" class="form-control" rows="2"></textarea>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Employee Photograph (JPG/PNG/WebP, max 2 MB)</label>
+                            <input type="file" name="photoFile" class="form-control" accept=".jpg,.jpeg,.png,.webp" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tab-pane fade" id="tabCompensation">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label asp-for="BaseSalary" class="form-label small fw-semibold"></label>
+                            <input asp-for="BaseSalary" class="form-control" type="number" step="0.01" />
+                            <span asp-validation-for="BaseSalary" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-4">
+                            <label asp-for="TaxIdentificationNumber" class="form-label small fw-semibold"></label>
+                            <input asp-for="TaxIdentificationNumber" class="form-control" />
+                        </div>
+                        <div class="col-md-4">
+                            <label asp-for="TaxFilingStatus" class="form-label small fw-semibold"></label>
+                            <select asp-for="TaxFilingStatus" class="form-select">
+                                <option value="">Select</option>
+                                <option value="Single">Single</option>
+                                <option value="MarriedJoint">Married Filing Jointly</option>
+                                <option value="HeadOfHousehold">Head of Household</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-3">
+                            <label asp-for="BankName" class="form-label small fw-semibold"></label>
+                            <input asp-for="BankName" class="form-control" />
+                        </div>
+                        <div class="col-md-3">
+                            <label asp-for="BankAccountTitle" class="form-label small fw-semibold"></label>
+                            <input asp-for="BankAccountTitle" class="form-control" />
+                        </div>
+                        <div class="col-md-3">
+                            <label asp-for="BankAccountNumber" class="form-label small fw-semibold"></label>
+                            <input asp-for="BankAccountNumber" class="form-control" />
+                        </div>
+                        <div class="col-md-3">
+                            <label asp-for="BankRoutingCode" class="form-label small fw-semibold"></label>
+                            <input asp-for="BankRoutingCode" class="form-control" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="card-footer bg-transparent border-top d-flex justify-content-end gap-2 py-3">
+            <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
+            <button type="submit" class="btn btn-primary"><i class="bi bi-check2-circle me-1"></i>@(isEdit ? "Update Employee" : "Register Employee")</button>
+        </div>
+    </div>
+</form>

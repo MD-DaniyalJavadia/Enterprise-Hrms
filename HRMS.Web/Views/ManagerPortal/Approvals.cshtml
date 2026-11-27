@@ -1,0 +1,225 @@
+@model ManagerApprovalsPageViewModel
+@using System.Text.Json
+@{
+    ViewData["Title"] = "Pending Approvals Hub";
+    ViewData["BreadcrumbParent"] = "Manager Portal";
+    var jsonOpts = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+    var categories = new[] { "", "Leave", "Regularization", "Overtime", "Loan", "Expense", "ProfileUpdate" };
+}
+
+@section PageActions {
+    <a asp-action="Index" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left me-1"></i>Command Center
+    </a>
+}
+
+<!-- Category Tabs -->
+<div class="d-flex flex-wrap gap-2 mb-4">
+    @foreach (var cat in categories)
+    {
+        var label = string.IsNullOrEmpty(cat) ? "All Categories" : cat;
+        var active = string.Equals(Model.FilterCategory ?? "", cat, StringComparison.OrdinalIgnoreCase);
+        <a asp-action="Approvals" asp-route-category="@(string.IsNullOrEmpty(cat) ? null : cat)"
+           class="btn btn-sm @(active ? "btn-primary" : "btn-outline-secondary")">
+            @label
+        </a>
+    }
+</div>
+
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-transparent d-flex justify-content-between align-items-center">
+        <h6 class="fw-bold mb-0">Team Requests Awaiting Your Action (@Model.Items.Count)</h6>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle hrms-portal-datatable small">
+                <thead class="table-light">
+                    <tr>
+                        <th>Submitted</th>
+                        <th>Category</th>
+                        <th>Employee</th>
+                        <th>Request</th>
+                        <th>Details / Notes</th>
+                        <th class="text-end">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model.Items)
+                    {
+                        var jsonItem = JsonSerializer.Serialize(item, jsonOpts);
+                        <tr>
+                            <td>@item.SubmittedDate.ToString("dd MMM yyyy")</td>
+                            <td><span class="badge bg-primary-subtle text-primary-emphasis">@item.Category</span></td>
+                            <td>
+                                <div class="fw-semibold">@item.EmployeeName</div>
+                                <div class="text-body-secondary">@item.EmployeeCode &bull; @item.DepartmentName</div>
+                            </td>
+                            <td>
+                                <div class="fw-semibold">@item.Title</div>
+                                <div class="text-body-secondary">@item.Summary</div>
+                            </td>
+                            <td>
+                                <div>@(string.IsNullOrWhiteSpace(item.Details) ? "-" : item.Details)</div>
+                                @if (item.HasAttachment && item.Category == "Leave")
+                                {
+                                    <a asp-action="DownloadTeamLeaveAttachment" asp-route-id="@item.RequestId" class="small text-decoration-none"><i class="bi bi-paperclip"></i> Attachment</a>
+                                }
+                                else if (item.HasAttachment && item.Category == "Expense")
+                                {
+                                    <a asp-action="DownloadTeamExpenseReceipt" asp-route-id="@item.RequestId" class="small text-decoration-none"><i class="bi bi-paperclip"></i> Receipt</a>
+                                }
+                            </td>
+                            <td class="text-end text-nowrap">
+                                <button type="button" class="btn btn-sm btn-success" onclick='HrmsPortal.openManagerDecisionModal(@Html.Raw(jsonItem), "Approved")'>
+                                    <i class="bi bi-check-lg"></i> Approve
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-danger" onclick='HrmsPortal.openManagerDecisionModal(@Html.Raw(jsonItem), "Rejected")'>
+                                    <i class="bi bi-x-lg"></i> Reject
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@if (Model.PendingAppraisals.Any())
+{
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-transparent">
+            <h6 class="fw-bold mb-0">Pending Performance Appraisal Evaluations (@Model.PendingAppraisals.Count)</h6>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0 small">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Employee</th>
+                            <th>Cycle</th>
+                            <th>Self Rating</th>
+                            <th>Status</th>
+                            <th class="text-end">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var pa in Model.PendingAppraisals)
+                        {
+                            var jsonPa = JsonSerializer.Serialize(pa, jsonOpts);
+                            <tr>
+                                <td>
+                                    <div class="fw-semibold">@pa.EmployeeName</div>
+                                    <div class="text-body-secondary">@pa.EmployeeCode &bull; @pa.DepartmentName</div>
+                                </td>
+                                <td>@pa.CycleName</td>
+                                <td>@(pa.SelfRating?.ToString("0.00") ?? "-")</td>
+                                <td><span class="badge bg-info-subtle text-info-emphasis">@pa.AppraisalStatus</span></td>
+                                <td class="text-end">
+                                    <button type="button" class="btn btn-sm btn-outline-primary" onclick='HrmsPortal.openTeamAppraisalReviewModal(@Html.Raw(jsonPa))'>Evaluate</button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Manager Decision Modal -->
+<div class="modal fade" id="mgrDecisionModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="mgrDecisionForm">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="Category" id="mgrDecCategory" />
+                <input type="hidden" name="RequestId" id="mgrDecRequestId" />
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold" id="mgrDecTitle">Process Request</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body row g-3">
+                    <div class="col-12 small fw-semibold text-primary" id="mgrDecSubtitle"></div>
+                    <div class="col-12">
+                        <label class="form-label">Decision *</label>
+                        <select name="Decision" id="mgrDecDecision" class="form-select" required>
+                            <option value="Approved">Approved</option>
+                            <option value="Rejected">Rejected</option>
+                        </select>
+                    </div>
+                    <div class="col-12 d-none" id="mgrDecNumericWrap">
+                        <label class="form-label" id="mgrDecNumericLabel">Approved Value</label>
+                        <input type="number" step="0.01" min="0" name="NumericOverride" id="mgrDecNumeric" class="form-control" />
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Reviewer Comments</label>
+                        <textarea name="ReviewerComments" id="mgrDecComments" class="form-control" rows="2"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="HrmsPortal.submitAjaxForm('#mgrDecisionForm', '/ManagerPortal/ProcessApproval', '#mgrDecisionModal')">Confirm</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Team Appraisal Review Modal -->
+<div class="modal fade" id="mgrTeamAppraisalModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form id="mgrTeamAppraisalForm">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="AppraisalId" id="mgrRevAppId" />
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold">Manager Performance Evaluation</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body row g-3">
+                    <div class="col-12 small fw-semibold text-primary" id="mgrRevLabel"></div>
+                    <div class="col-md-4">
+                        <label class="form-label">Manager Rating (1-5) *</label>
+                        <input type="number" step="0.1" min="1" max="5" name="ManagerRating" id="mgrRevRating" class="form-control" required />
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Final Rating (1-5) *</label>
+                        <input type="number" step="0.1" min="1" max="5" name="FinalRating" id="mgrRevFinal" class="form-control" required />
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Merit Increment %</label>
+                        <input type="number" step="0.1" min="0" max="100" name="RecommendedIncrementPercent" id="mgrRevIncrement" class="form-control" />
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Strengths</label>
+                        <textarea name="Strengths" id="mgrRevStrengths" class="form-control" rows="2"></textarea>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Areas for Improvement</label>
+                        <textarea name="ImprovementAreas" id="mgrRevImprovements" class="form-control" rows="2"></textarea>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Manager Comments</label>
+                        <textarea name="ManagerComments" id="mgrRevComments" class="form-control" rows="2"></textarea>
+                    </div>
+                    <div class="col-12">
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input" id="mgrRevFinalize" name="Finalize" value="true" checked />
+                            <input type="hidden" name="Finalize" value="false" />
+                            <label class="form-check-label" for="mgrRevFinalize">Finalize and complete evaluation</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="HrmsPortal.submitAjaxForm('#mgrTeamAppraisalForm', '/ManagerPortal/SubmitTeamAppraisalReview', '#mgrTeamAppraisalModal')">Save Evaluation</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/portal.js" asp-append-version="true"></script>
+}

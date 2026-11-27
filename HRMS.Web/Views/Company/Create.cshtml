@@ -1,0 +1,86 @@
+@model CompanyFormViewModel
+@{
+    ViewData["Title"] = "Create Company";
+    ViewData["BreadcrumbParent"] = "Companies";
+}
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-transparent border-bottom py-3">
+        <h2 class="h6 fw-bold mb-0"><i class="bi bi-building-add me-2 text-primary"></i>New Company Profile</h2>
+    </div>
+    <div class="card-body p-4">
+        <form asp-action="Create" method="post" novalidate>
+            @Html.AntiForgeryToken()
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger small py-2"></div>
+
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label asp-for="CompanyCode" class="form-label small fw-semibold"></label>
+                    <input asp-for="CompanyCode" class="form-control" placeholder="e.g. ACME02" />
+                    <span asp-validation-for="CompanyCode" class="text-danger small"></span>
+                </div>
+                <div class="col-md-5">
+                    <label asp-for="CompanyName" class="form-label small fw-semibold"></label>
+                    <input asp-for="CompanyName" class="form-control" />
+                    <span asp-validation-for="CompanyName" class="text-danger small"></span>
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="LegalName" class="form-label small fw-semibold"></label>
+                    <input asp-for="LegalName" class="form-control" />
+                    <span asp-validation-for="LegalName" class="text-danger small"></span>
+                </div>
+                <div class="col-md-3">
+                    <label asp-for="TaxId" class="form-label small fw-semibold"></label>
+                    <input asp-for="TaxId" class="form-control" />
+                </div>
+                <div class="col-md-3">
+                    <label asp-for="Email" class="form-label small fw-semibold"></label>
+                    <input asp-for="Email" class="form-control" />
+                    <span asp-validation-for="Email" class="text-danger small"></span>
+                </div>
+                <div class="col-md-3">
+                    <label asp-for="Phone" class="form-label small fw-semibold"></label>
+                    <input asp-for="Phone" class="form-control" />
+                </div>
+                <div class="col-md-3">
+                    <label asp-for="Website" class="form-label small fw-semibold"></label>
+                    <input asp-for="Website" class="form-control" placeholder="https://..." />
+                    <span asp-validation-for="Website" class="text-danger small"></span>
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="AddressLine1" class="form-label small fw-semibold"></label>
+                    <input asp-for="AddressLine1" class="form-control" />
+                </div>
+                <div class="col-md-3">
+                    <label asp-for="City" class="form-label small fw-semibold"></label>
+                    <input asp-for="City" class="form-control" />
+                </div>
+                <div class="col-md-3">
+                    <label asp-for="Country" class="form-label small fw-semibold"></label>
+                    <input asp-for="Country" class="form-control" />
+                </div>
+                <div class="col-md-3">
+                    <label asp-for="CurrencyCode" class="form-label small fw-semibold"></label>
+                    <input asp-for="CurrencyCode" class="form-control" maxlength="3" />
+                    <span asp-validation-for="CurrencyCode" class="text-danger small"></span>
+                </div>
+                <div class="col-md-5">
+                    <label asp-for="TimeZoneId" class="form-label small fw-semibold"></label>
+                    <input asp-for="TimeZoneId" class="form-control" />
+                    <span asp-validation-for="TimeZoneId" class="text-danger small"></span>
+                </div>
+                <div class="col-md-4 d-flex align-items-end">
+                    <div class="form-check form-switch mb-2">
+                        <input asp-for="IsActive" class="form-check-input" />
+                        <label asp-for="IsActive" class="form-check-label small fw-semibold"></label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-end gap-2 mt-4">
+                <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
+                <button type="submit" class="btn btn-primary"><i class="bi bi-check2-circle me-1"></i>Save Company</button>
+            </div>
+        </form>
+    </div>
+</div>
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

@@ -1,0 +1,29 @@
+@model CompanyFormViewModel
+@{
+    ViewData["Title"] = "Company Details";
+    ViewData["BreadcrumbParent"] = "Companies";
+}
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-transparent border-bottom py-3 d-flex justify-content-between align-items-center">
+        <h2 class="h6 fw-bold mb-0"><i class="bi bi-building me-2 text-primary"></i>@Model.CompanyName (@Model.CompanyCode)</h2>
+        <div class="d-flex gap-2">
+            @if (User.HasPermission("ORG.MANAGE"))
+            {
+                <a asp-action="Edit" asp-route-id="@Model.CompanyId" class="btn btn-sm btn-primary"><i class="bi bi-pencil me-1"></i>Edit</a>
+            }
+            <a asp-action="Index" class="btn btn-sm btn-outline-secondary">Back to List</a>
+        </div>
+    </div>
+    <div class="card-body p-4">
+        <dl class="row mb-0">
+            <dt class="col-sm-3 text-body-secondary">Legal Name</dt><dd class="col-sm-9">@(Model.LegalName ?? "-")</dd>
+            <dt class="col-sm-3 text-body-secondary">Tax ID</dt><dd class="col-sm-9">@(Model.TaxId ?? "-")</dd>
+            <dt class="col-sm-3 text-body-secondary">Email</dt><dd class="col-sm-9">@(Model.Email ?? "-")</dd>
+            <dt class="col-sm-3 text-body-secondary">Phone</dt><dd class="col-sm-9">@(Model.Phone ?? "-")</dd>
+            <dt class="col-sm-3 text-body-secondary">Website</dt><dd class="col-sm-9">@(Model.Website ?? "-")</dd>
+            <dt class="col-sm-3 text-body-secondary">Address</dt><dd class="col-sm-9">@Model.AddressLine1 @Model.City @Model.Country</dd>
+            <dt class="col-sm-3 text-body-secondary">Currency / Time Zone</dt><dd class="col-sm-9">@Model.CurrencyCode &bull; @Model.TimeZoneId</dd>
+            <dt class="col-sm-3 text-body-secondary">Status</dt><dd class="col-sm-9">@(Model.IsActive ? "Active" : "Inactive")</dd>
+        </dl>
+    </div>
+</div>

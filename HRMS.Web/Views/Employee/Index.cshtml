@@ -1,0 +1,133 @@
+@model EmployeeDirectoryFilterViewModel
+@{
+    ViewData["Title"] = "Employees";
+    ViewData["BreadcrumbParent"] = "Workforce";
+}
+
+@section PageActions {
+    <div class="d-flex flex-wrap gap-2">
+        <a asp-action="Directory" class="btn btn-outline-secondary btn-sm"><i class="bi bi-grid-3x3-gap me-1"></i>Directory View</a>
+        <a asp-action="Export" asp-route-branchId="@Model.BranchId" asp-route-departmentId="@Model.DepartmentId" asp-route-status="@Model.EmploymentStatus" asp-route-search="@Model.SearchTerm" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-file-earmark-spreadsheet me-1"></i>Export CSV
+        </a>
+        @if (User.HasPermission("EMPLOYEE.MANAGE"))
+        {
+            <a asp-action="Import" class="btn btn-outline-primary btn-sm"><i class="bi bi-upload me-1"></i>Import CSV</a>
+            <a asp-action="Create" class="btn btn-primary btn-sm"><i class="bi bi-person-plus me-1"></i>Register Employee</a>
+        }
+    </div>
+}
+
+<div class="card border-0 shadow-sm mb-3">
+    <div class="card-body py-3">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label small fw-semibold">Search</label>
+                <input type="text" name="search" value="@Model.SearchTerm" class="form-control form-control-sm" placeholder="Code, name, or email..." />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small fw-semibold">Branch</label>
+                <select name="branchId" class="form-select form-select-sm hrms-select2">
+                    <option value="">All Branches</option>
+                    @foreach (var b in Model.Branches)
+                    {
+                        <option value="@b.BranchId" selected="@(Model.BranchId == b.BranchId)">@b.BranchName</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small fw-semibold">Department</label>
+                <select name="departmentId" class="form-select form-select-sm hrms-select2">
+                    <option value="">All Departments</option>
+                    @foreach (var d in Model.Departments)
+                    {
+                        <option value="@d.DepartmentId" selected="@(Model.DepartmentId == d.DepartmentId)">@d.DepartmentName</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-3 d-flex gap-2">
+                <select name="status" class="form-select form-select-sm">
+                    <option value="">All Statuses</option>
+                    <option value="1" selected="@(Model.EmploymentStatus == 1)">Active</option>
+                    <option value="2" selected="@(Model.EmploymentStatus == 2)">Probation</option>
+                    <option value="3" selected="@(Model.EmploymentStatus == 3)">On Leave</option>
+                    <option value="4" selected="@(Model.EmploymentStatus == 4)">Resigned</option>
+                    <option value="5" selected="@(Model.EmploymentStatus == 5)">Terminated</option>
+                    <option value="6" selected="@(Model.EmploymentStatus == 6)">Inactive</option>
+                </select>
+                <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-funnel"></i></button>
+                <a asp-action="Index" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-counterclockwise"></i></a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle hrms-emp-datatable w-100">
+                <thead>
+                    <tr>
+                        <th>Code</th>
+                        <th>Employee</th>
+                        <th>Department / Designation</th>
+                        <th>Branch</th>
+                        <th>Hire Date</th>
+                        <th>Status</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var e in Model.Employees)
+                    {
+                        <tr>
+                            <td class="fw-semibold">@e.EmployeeCode</td>
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    @if (!string.IsNullOrEmpty(e.PhotoPath))
+                                    {
+                                        <img src="@e.PhotoPath" alt="@e.FullName" class="rounded-circle object-fit-cover" style="width:36px;height:36px;" />
+                                    }
+                                    else
+                                    {
+                                        <span class="hrms-avatar">@string.Join("", e.FullName.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(x => char.ToUpperInvariant(x[0])))</span>
+                                    }
+                                    <div>
+                                        <a asp-action="Details" asp-route-id="@e.EmployeeId" class="fw-semibold text-decoration-none">@e.FullName</a>
+                                        <div class="small text-body-secondary">@e.WorkEmail</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="fw-medium">@e.DesignationTitle</div>
+                                <div class="small text-body-secondary">@e.DepartmentName</div>
+                            </td>
+                            <td>@e.BranchName</td>
+                            <td>@e.HireDate.ToString("MMM dd, yyyy")</td>
+                            <td>
+                                <span class="badge @(e.EmploymentStatus == 1 ? "bg-success-subtle text-success-emphasis" : e.EmploymentStatus == 2 ? "bg-info-subtle text-info-emphasis" : "bg-secondary-subtle text-secondary-emphasis")">
+                                    @e.StatusLabel
+                                </span>
+                            </td>
+                            <td class="text-end text-nowrap">
+                                <a asp-action="Details" asp-route-id="@e.EmployeeId" class="btn btn-sm btn-outline-info" title="360 Profile"><i class="bi bi-eye"></i></a>
+                                <a asp-action="IdCard" asp-route-id="@e.EmployeeId" class="btn btn-sm btn-outline-secondary" title="ID Card"><i class="bi bi-person-badge"></i></a>
+                                @if (User.HasPermission("EMPLOYEE.MANAGE"))
+                                {
+                                    <a asp-action="Edit" asp-route-id="@e.EmployeeId" class="btn btn-sm btn-outline-primary" title="Edit"><i class="bi bi-pencil"></i></a>
+                                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="HrmsEmp.deleteSubItem('@Url.Action("Delete", new { id = e.EmployeeId })', 'Employee @e.FullName')" title="Archive">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/employee.js" asp-append-version="true"></script>
+}

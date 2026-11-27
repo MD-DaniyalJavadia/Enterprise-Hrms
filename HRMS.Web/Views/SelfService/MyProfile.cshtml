@@ -1,0 +1,239 @@
+@model EssMyProfilePageViewModel
+@{
+    ViewData["Title"] = "My 360° Profile";
+    ViewData["BreadcrumbParent"] = "Self-Service Portal";
+    var emp = Model.FullProfile?.Employee;
+}
+
+@section PageActions {
+    <div class="d-flex gap-2 align-items-center">
+        @if (Model.IsSuperAdminPreview && Model.PreviewEmployees.Any())
+        {
+            <form method="get" asp-action="MyProfile" class="d-flex align-items-center gap-2">
+                <select name="previewEmployeeId" class="form-select form-select-sm" onchange="this.form.submit()">
+                    @foreach (var item in Model.PreviewEmployees)
+                    {
+                        <option value="@item.EmployeeId" selected="@(emp?.EmployeeId == item.EmployeeId)">@item.EmployeeCode - @item.FullName</option>
+                    }
+                </select>
+            </form>
+        }
+        @if (emp != null)
+        {
+            <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#essProfileReqModal">
+                <i class="bi bi-pencil-square me-1"></i>Request Profile Update
+            </button>
+        }
+    </div>
+}
+
+@if (!Model.HasEmployeeProfile || Model.FullProfile is null || emp is null)
+{
+    <div class="alert alert-info">No employee profile is linked to your account.</div>
+}
+else
+{
+    <div class="row g-4">
+        <div class="col-lg-5">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-transparent"><h6 class="fw-bold mb-0">Personal &amp; Contact Information</h6></div>
+                <div class="card-body small">
+                    <div class="row g-2">
+                        <div class="col-5 text-body-secondary">Employee Code</div><div class="col-7 fw-semibold">@emp.EmployeeCode</div>
+                        <div class="col-5 text-body-secondary">Full Name</div><div class="col-7 fw-semibold">@emp.FullName</div>
+                        <div class="col-5 text-body-secondary">Department</div><div class="col-7">@emp.DepartmentName</div>
+                        <div class="col-5 text-body-secondary">Designation</div><div class="col-7">@emp.DesignationTitle</div>
+                        <div class="col-5 text-body-secondary">Branch</div><div class="col-7">@emp.BranchName</div>
+                        <div class="col-5 text-body-secondary">Manager</div><div class="col-7">@(emp.ReportingManagerName ?? "-")</div>
+                        <div class="col-5 text-body-secondary">Work Email</div><div class="col-7">@emp.WorkEmail</div>
+                        <div class="col-5 text-body-secondary">Personal Email</div><div class="col-7">@(emp.PersonalEmail ?? "-")</div>
+                        <div class="col-5 text-body-secondary">Mobile Phone</div><div class="col-7">@(emp.MobilePhone ?? emp.Phone ?? "-")</div>
+                        <div class="col-5 text-body-secondary">Address</div><div class="col-7">@(emp.CurrentAddress ?? "-") @(string.IsNullOrWhiteSpace(emp.City) ? "" : $", {emp.City}")</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-transparent"><h6 class="fw-bold mb-0">Bank &amp; Tax Information</h6></div>
+                <div class="card-body small">
+                    <div class="row g-2">
+                        <div class="col-5 text-body-secondary">Bank Name</div><div class="col-7 fw-semibold">@(emp.BankName ?? "-")</div>
+                        <div class="col-5 text-body-secondary">Account Title</div><div class="col-7">@(emp.BankAccountTitle ?? "-")</div>
+                        <div class="col-5 text-body-secondary">Account Number</div><div class="col-7">@(emp.BankAccountNumber ?? "-")</div>
+                        <div class="col-5 text-body-secondary">Routing / IBAN</div><div class="col-7">@(emp.BankRoutingCode ?? "-")</div>
+                        <div class="col-5 text-body-secondary">Tax ID (TIN)</div><div class="col-7">@(emp.TaxIdentificationNumber ?? "-")</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-transparent"><h6 class="fw-bold mb-0">Emergency Contacts</h6></div>
+                <div class="card-body small">
+                    @if (!Model.FullProfile.EmergencyContacts.Any())
+                    {
+                        <div class="text-body-secondary">No emergency contacts on file.</div>
+                    }
+                    @foreach (var ec in Model.FullProfile.EmergencyContacts)
+                    {
+                        <div class="border rounded-2 p-2 mb-2">
+                            <div class="fw-semibold">@ec.ContactName <span class="badge bg-secondary-subtle text-secondary-emphasis">@ec.Relationship</span></div>
+                            <div>Phone: @ec.PrimaryPhone</div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-7">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-transparent d-flex justify-content-between align-items-center">
+                    <h6 class="fw-bold mb-0">My Profile Update Requests</h6>
+                    <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#essProfileReqModal">New Request</button>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0 small">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Category</th>
+                                    <th>Summary</th>
+                                    <th>Submitted</th>
+                                    <th>Status</th>
+                                    <th class="text-end">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (!Model.ProfileRequests.Any())
+                                {
+                                    <tr><td colspan="5" class="text-center text-body-secondary py-3">No profile change requests submitted yet.</td></tr>
+                                }
+                                @foreach (var r in Model.ProfileRequests)
+                                {
+                                    var badge = r.ApprovalStatus switch { "Approved" => "bg-success", "Rejected" => "bg-danger", "Cancelled" => "bg-secondary", _ => "bg-warning text-dark" };
+                                    <tr>
+                                        <td class="fw-semibold">@r.RequestType</td>
+                                        <td>
+                                            <div>@r.FieldSummary</div>
+                                            @if (!string.IsNullOrWhiteSpace(r.ReviewerComments))
+                                            {
+                                                <div class="text-body-secondary">Review: @r.ReviewerComments</div>
+                                            }
+                                        </td>
+                                        <td>@r.CreatedDate.ToString("dd MMM yyyy")</td>
+                                        <td><span class="badge @badge">@r.ApprovalStatus</span></td>
+                                        <td class="text-end">
+                                            @if (r.ApprovalStatus == "Pending")
+                                            {
+                                                <button type="button" class="btn btn-sm btn-outline-danger py-0" onclick="HrmsPortal.cancelProfileRequest(@r.RequestId)">Withdraw</button>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-transparent"><h6 class="fw-bold mb-0">Skills, Certifications &amp; Career History</h6></div>
+                <div class="card-body small">
+                    <div class="mb-3">
+                        <div class="fw-bold text-uppercase text-body-secondary mb-2">Skills &amp; Certifications</div>
+                        @if (!Model.FullProfile.Skills.Any())
+                        {
+                            <div class="text-body-secondary">No skills recorded.</div>
+                        }
+                        else
+                        {
+                            <div class="d-flex flex-wrap gap-2">
+                                @foreach (var sk in Model.FullProfile.Skills)
+                                {
+                                    <span class="badge bg-primary-subtle text-primary-emphasis px-3 py-2">@sk.SkillName (@sk.ProficiencyLevel)</span>
+                                }
+                            </div>
+                        }
+                    </div>
+                    <div class="border-top pt-3">
+                        <div class="fw-bold text-uppercase text-body-secondary mb-2">Employment Timeline</div>
+                        @foreach (var h in Model.FullProfile.EmploymentHistory)
+                        {
+                            <div class="d-flex justify-content-between border-bottom py-2">
+                                <span><strong>@h.EventType</strong> &mdash; @(h.ToDesignation ?? h.ToDepartmentName)</span>
+                                <span class="text-body-secondary">@h.EffectiveDate.ToString("dd MMM yyyy")</span>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="essProfileReqModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <form id="essProfileReqForm">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="previewEmployeeId" value="@(Model.IsSuperAdminPreview ? emp.EmployeeId : null)" />
+                    <div class="modal-header">
+                        <h5 class="modal-title fw-bold">Request Profile Information Update</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body row g-3">
+                        <div class="col-md-5">
+                            <label class="form-label">Change Category *</label>
+                            <select name="RequestType" id="essReqType" class="form-select" required>
+                                <option value="ContactInfo">Contact Info</option>
+                                <option value="Address">Residential Address</option>
+                                <option value="BankDetails">Bank Account Details</option>
+                                <option value="EmergencyContact">Emergency Contact</option>
+                            </select>
+                        </div>
+                        <div class="col-md-7">
+                            <label class="form-label">Change Summary *</label>
+                            <input type="text" name="FieldSummary" class="form-control" required />
+                        </div>
+
+                        <div id="essProfContact" class="row g-3 ess-prof-group">
+                            <div class="col-md-4"><label class="form-label">Work Phone</label><input type="text" name="RequestedPhone" class="form-control" value="@emp.Phone" /></div>
+                            <div class="col-md-4"><label class="form-label">Mobile Phone</label><input type="text" name="RequestedMobilePhone" class="form-control" value="@emp.MobilePhone" /></div>
+                            <div class="col-md-4"><label class="form-label">Personal Email</label><input type="email" name="RequestedPersonalEmail" class="form-control" value="@emp.PersonalEmail" /></div>
+                        </div>
+
+                        <div id="essProfAddress" class="row g-3 ess-prof-group d-none">
+                            <div class="col-12"><label class="form-label">Current Address</label><input type="text" name="RequestedAddress" class="form-control" value="@emp.CurrentAddress" /></div>
+                            <div class="col-md-6"><label class="form-label">City</label><input type="text" name="RequestedCity" class="form-control" value="@emp.City" /></div>
+                            <div class="col-md-6"><label class="form-label">Country</label><input type="text" name="RequestedCountry" class="form-control" value="@emp.Country" /></div>
+                        </div>
+
+                        <div id="essProfBank" class="row g-3 ess-prof-group d-none">
+                            <div class="col-md-6"><label class="form-label">Bank Name</label><input type="text" name="RequestedBankName" class="form-control" value="@emp.BankName" /></div>
+                            <div class="col-md-6"><label class="form-label">Account Title</label><input type="text" name="RequestedBankAccountTitle" class="form-control" value="@emp.BankAccountTitle" /></div>
+                            <div class="col-md-6"><label class="form-label">Account Number</label><input type="text" name="RequestedBankAccountNumber" class="form-control" value="@emp.BankAccountNumber" /></div>
+                            <div class="col-md-6"><label class="form-label">Routing / IBAN</label><input type="text" name="RequestedBankRoutingCode" class="form-control" value="@emp.BankRoutingCode" /></div>
+                        </div>
+
+                        <div id="essProfEmergency" class="row g-3 ess-prof-group d-none">
+                            <div class="col-md-4"><label class="form-label">Contact Name</label><input type="text" name="RequestedEmergencyContactName" class="form-control" /></div>
+                            <div class="col-md-4"><label class="form-label">Relationship</label><input type="text" name="RequestedEmergencyRelationship" class="form-control" /></div>
+                            <div class="col-md-4"><label class="form-label">Primary Phone</label><input type="text" name="RequestedEmergencyPhone" class="form-control" /></div>
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label">Notes</label>
+                            <textarea name="EmployeeNotes" class="form-control" rows="2"></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary" onclick="HrmsPortal.submitAjaxForm('#essProfileReqForm', '/SelfService/SubmitProfileRequest', '#essProfileReqModal')">Submit Request</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <script src="~/js/portal.js" asp-append-version="true"></script>
+}

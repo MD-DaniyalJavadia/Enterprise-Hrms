@@ -1,0 +1,94 @@
+@model DocumentAcknowledgmentsPageViewModel
+@{
+    ViewData["Title"] = Model.CanManage ? "Policy Acknowledgments & Compliance" : "My Policy Sign-Offs";
+    ViewData["BreadcrumbParent"] = "Assets & Documents";
+}
+
+@section PageActions {
+    <a asp-action="Index" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-folder2-open me-1"></i>Policy Repository
+    </a>
+}
+
+<div class="card border-0 shadow-sm mb-3">
+    <div class="card-body py-3">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label small fw-semibold">Policy / Document</label>
+                <select name="documentId" class="form-select form-select-sm hrms-select2">
+                    <option value="">All Policies</option>
+                    @foreach (var d in Model.Documents)
+                    {
+                        <option value="@d.DocumentId" selected="@(Model.DocumentId == d.DocumentId)">@d.DocumentCode — @d.Title (v@(d.VersionNumber))</option>
+                    }
+                </select>
+            </div>
+            @if (Model.CanManage)
+            {
+                <div class="col-md-4">
+                    <label class="form-label small fw-semibold">Employee</label>
+                    <select name="employeeId" class="form-select form-select-sm hrms-select2">
+                        <option value="">All Employees</option>
+                        @foreach (var emp in Model.Employees)
+                        {
+                            <option value="@emp.EmployeeId" selected="@(Model.EmployeeId == emp.EmployeeId)">@emp.FullName (@emp.EmployeeCode)</option>
+                        }
+                    </select>
+                </div>
+            }
+            <div class="col-md-3 d-flex gap-2">
+                <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-funnel me-1"></i>Filter</button>
+                <a asp-action="Acknowledgments" class="btn btn-outline-secondary btn-sm">Reset</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle hrms-ad-datatable w-100">
+                <thead>
+                    <tr>
+                        <th>Document</th>
+                        <th>Signed Version</th>
+                        <th>Employee</th>
+                        <th>Department</th>
+                        <th>Signed At (UTC)</th>
+                        <th>IP Address</th>
+                        <th>Remarks</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var a in Model.Acknowledgments)
+                    {
+                        var isLatest = string.Equals(a.AcknowledgedVersion, a.CurrentVersion, StringComparison.OrdinalIgnoreCase);
+                        <tr>
+                            <td>
+                                <div class="fw-semibold">@a.DocumentTitle</div>
+                                <div class="small text-body-secondary font-monospace">@a.DocumentCode</div>
+                            </td>
+                            <td>
+                                <span class="badge @(isLatest ? "bg-success-subtle text-success-emphasis" : "bg-warning-subtle text-warning-emphasis")">
+                                    v@(a.AcknowledgedVersion) @(isLatest ? "(Current)" : $"(Latest: v{a.CurrentVersion})")
+                                </span>
+                            </td>
+                            <td>
+                                <div class="fw-semibold">@a.EmployeeName</div>
+                                <div class="small text-body-secondary">@a.EmployeeCode</div>
+                            </td>
+                            <td class="small">@a.DepartmentName</td>
+                            <td class="small">@a.AcknowledgedDate.ToString("dd MMM yyyy HH:mm")</td>
+                            <td class="small font-monospace">@(a.IpAddress ?? "-")</td>
+                            <td class="small">@(a.Remarks ?? "-")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/asset-document.js" asp-append-version="true"></script>
+}

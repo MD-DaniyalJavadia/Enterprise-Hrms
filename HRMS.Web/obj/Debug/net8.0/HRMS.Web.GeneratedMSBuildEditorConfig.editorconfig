@@ -1,0 +1,459 @@
+is_global = true
+build_property.TargetFramework = net8.0
+build_property.TargetPlatformMinVersion = 
+build_property.UsingMicrosoftNETSdkWeb = true
+build_property.ProjectTypeGuids = 
+build_property.InvariantGlobalization = 
+build_property.PlatformNeutralAssembly = 
+build_property.EnforceExtendedAnalyzerRules = 
+build_property._SupportedPlatformList = Linux,macOS,Windows
+build_property.RootNamespace = HRMS.Web
+build_property.RootNamespace = HRMS.Web
+build_property.ProjectDir = E:\enterprise-hrms---asp.net-core-mvc\HRMS.Web\
+build_property.EnableComHosting = 
+build_property.EnableGeneratedComInterfaceComImportInterop = 
+build_property.RazorLangVersion = 8.0
+build_property.SupportLocalizedComponentNames = 
+build_property.GenerateRazorMetadataSourceChecksumAttributes = 
+build_property.MSBuildProjectDirectory = E:\enterprise-hrms---asp.net-core-mvc\HRMS.Web
+build_property._RazorSourceGeneratorDebug = 
+
+[E:/enterprise-hrms---asp.net-core-mvc/HRMS.Web/Views/Account/AccessDenied.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWNjb3VudFxBY2Nlc3NEZW5pZWQuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/enterprise-hrms---asp.net-core-mvc/HRMS.Web/Views/Account/ChangePassword.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWNjb3VudFxDaGFuZ2VQYXNzd29yZC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/enterprise-hrms---asp.net-core-mvc/HRMS.Web/Views/Account/Login.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWNjb3VudFxMb2dpbi5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/enterprise-hrms---asp.net-core-mvc/HRMS.Web/Views/Account/Setup.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWNjb3VudFxTZXR1cC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/enterprise-hrms---asp.net-core-mvc/HRMS.Web/Views/Asset/Allocations.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQXNzZXRcQWxsb2NhdGlvbnMuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/enterprise-hrms---asp.net-core-mvc/HRMS.Web/Views/Asset/Categories.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQXNzZXRcQ2F0ZWdvcmllcy5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/enterprise-hrms---asp.net-core-mvc/HRMS.Web/Views/Asset/Details.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQXNzZXRcRGV0YWlscy5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/enterprise-hrms---asp.net-core-mvc/HRMS.Web/Views/Asset/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQXNzZXRcSW5kZXguY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/enterprise-hrms---asp.net-core-mvc/HRMS.Web/Views/Asset/Maintenance.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQXNzZXRcTWFpbnRlbmFuY2UuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/enterprise-hrms---asp.net-core-mvc/HRMS.Web/Views/Attendance/EmployeeCalendar.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQXR0ZW5kYW5jZVxFbXBsb3llZUNhbGVuZGFyLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/enterprise-hrms---asp.net-core-mvc/HRMS.Web/Views/Attendance/Holidays.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQXR0ZW5kYW5jZVxIb2xpZGF5cy5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/enterprise-hrms---asp.net-core-mvc/HRMS.Web/Views/Attendance/Import.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQXR0ZW5kYW5jZVxJbXBvcnQuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/enterprise-hrms---asp.net-core-mvc/HRMS.Web/Views/Attendance/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQXR0ZW5kYW5jZVxJbmRleC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/enterprise-hrms---asp.net-core-mvc/HRMS.Web/Views/Attendance/MonthlyReport.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQXR0ZW5kYW5jZVxNb250aGx5UmVwb3J0LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/enterprise-hrms---asp.net-core-mvc/HRMS.Web/Views/Attendance/Regularizations.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQXR0ZW5kYW5jZVxSZWd1bGFyaXphdGlvbnMuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/enterprise-hrms---asp.net-core-mvc/HRMS.Web/Views/Attendance/Roster.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQXR0ZW5kYW5jZVxSb3N0ZXIuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/enterprise-hrms---asp.net-core-mvc/HRMS.Web/Views/Branch/Create.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQnJhbmNoXENyZWF0ZS5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/enterprise-hrms---asp.net-core-mvc/HRMS.Web/Views/Branch/Details.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQnJhbmNoXERldGFpbHMuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/enterprise-hrms---asp.net-core-mvc/HRMS.Web/Views/Branch/Edit.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQnJhbmNoXEVkaXQuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/enterprise-hrms---asp.net-core-mvc/HRMS.Web/Views/Branch/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQnJhbmNoXEluZGV4LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/enterprise-hrms---asp.net-core-mvc/HRMS.Web/Views/Branch/_BranchForm.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQnJhbmNoXF9CcmFuY2hGb3JtLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/enterprise-hrms---asp.net-core-mvc/HRMS.Web/Views/Company/Create.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQ29tcGFueVxDcmVhdGUuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/enterprise-hrms---asp.net-core-mvc/HRMS.Web/Views/Company/Details.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQ29tcGFueVxEZXRhaWxzLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/enterprise-hrms---asp.net-core-mvc/HRMS.Web/Views/Company/Edit.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQ29tcGFueVxFZGl0LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/enterprise-hrms---asp.net-core-mvc/HRMS.Web/Views/Company/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQ29tcGFueVxJbmRleC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/enterprise-hrms---asp.net-core-mvc/HRMS.Web/Views/Dashboard/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcRGFzaGJvYXJkXEluZGV4LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/enterprise-hrms---asp.net-core-mvc/HRMS.Web/Views/Department/Create.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcRGVwYXJ0bWVudFxDcmVhdGUuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/enterprise-hrms---asp.net-core-mvc/HRMS.Web/Views/Department/Details.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcRGVwYXJ0bWVudFxEZXRhaWxzLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/enterprise-hrms---asp.net-core-mvc/HRMS.Web/Views/Department/Edit.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcRGVwYXJ0bWVudFxFZGl0LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/enterprise-hrms---asp.net-core-mvc/HRMS.Web/Views/Department/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcRGVwYXJ0bWVudFxJbmRleC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/enterprise-hrms---asp.net-core-mvc/HRMS.Web/Views/Department/_DepartmentForm.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcRGVwYXJ0bWVudFxfRGVwYXJ0bWVudEZvcm0uY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/enterprise-hrms---asp.net-core-mvc/HRMS.Web/Views/Designation/Create.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcRGVzaWduYXRpb25cQ3JlYXRlLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/enterprise-hrms---asp.net-core-mvc/HRMS.Web/Views/Designation/Details.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcRGVzaWduYXRpb25cRGV0YWlscy5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/enterprise-hrms---asp.net-core-mvc/HRMS.Web/Views/Designation/Edit.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcRGVzaWduYXRpb25cRWRpdC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/enterprise-hrms---asp.net-core-mvc/HRMS.Web/Views/Designation/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcRGVzaWduYXRpb25cSW5kZXguY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/enterprise-hrms---asp.net-core-mvc/HRMS.Web/Views/Designation/_DesignationForm.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcRGVzaWduYXRpb25cX0Rlc2lnbmF0aW9uRm9ybS5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/enterprise-hrms---asp.net-core-mvc/HRMS.Web/Views/Document/Acknowledgments.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcRG9jdW1lbnRcQWNrbm93bGVkZ21lbnRzLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/enterprise-hrms---asp.net-core-mvc/HRMS.Web/Views/Document/Categories.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcRG9jdW1lbnRcQ2F0ZWdvcmllcy5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/enterprise-hrms---asp.net-core-mvc/HRMS.Web/Views/Document/EmployeeVault.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcRG9jdW1lbnRcRW1wbG95ZWVWYXVsdC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/enterprise-hrms---asp.net-core-mvc/HRMS.Web/Views/Document/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcRG9jdW1lbnRcSW5kZXguY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/enterprise-hrms---asp.net-core-mvc/HRMS.Web/Views/Employee/Create.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcRW1wbG95ZWVcQ3JlYXRlLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/enterprise-hrms---asp.net-core-mvc/HRMS.Web/Views/Employee/Details.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcRW1wbG95ZWVcRGV0YWlscy5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/enterprise-hrms---asp.net-core-mvc/HRMS.Web/Views/Employee/Directory.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcRW1wbG95ZWVcRGlyZWN0b3J5LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/enterprise-hrms---asp.net-core-mvc/HRMS.Web/Views/Employee/Edit.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcRW1wbG95ZWVcRWRpdC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/enterprise-hrms---asp.net-core-mvc/HRMS.Web/Views/Employee/IdCard.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcRW1wbG95ZWVcSWRDYXJkLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/enterprise-hrms---asp.net-core-mvc/HRMS.Web/Views/Employee/Import.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcRW1wbG95ZWVcSW1wb3J0LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/enterprise-hrms---asp.net-core-mvc/HRMS.Web/Views/Employee/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcRW1wbG95ZWVcSW5kZXguY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/enterprise-hrms---asp.net-core-mvc/HRMS.Web/Views/Employee/_EmployeeForm.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcRW1wbG95ZWVcX0VtcGxveWVlRm9ybS5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/enterprise-hrms---asp.net-core-mvc/HRMS.Web/Views/Error/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcRXJyb3JcSW5kZXguY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/enterprise-hrms---asp.net-core-mvc/HRMS.Web/Views/Exit/Details.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcRXhpdFxEZXRhaWxzLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/enterprise-hrms---asp.net-core-mvc/HRMS.Web/Views/Exit/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcRXhpdFxJbmRleC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/enterprise-hrms---asp.net-core-mvc/HRMS.Web/Views/Exit/Interviews.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcRXhpdFxJbnRlcnZpZXdzLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/enterprise-hrms---asp.net-core-mvc/HRMS.Web/Views/Exit/Templates.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcRXhpdFxUZW1wbGF0ZXMuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/enterprise-hrms---asp.net-core-mvc/HRMS.Web/Views/Expense/Categories.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcRXhwZW5zZVxDYXRlZ29yaWVzLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/enterprise-hrms---asp.net-core-mvc/HRMS.Web/Views/Expense/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcRXhwZW5zZVxJbmRleC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/enterprise-hrms---asp.net-core-mvc/HRMS.Web/Views/Leave/Balances.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTGVhdmVcQmFsYW5jZXMuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/enterprise-hrms---asp.net-core-mvc/HRMS.Web/Views/Leave/Calendar.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTGVhdmVcQ2FsZW5kYXIuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/enterprise-hrms---asp.net-core-mvc/HRMS.Web/Views/Leave/Encashment.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTGVhdmVcRW5jYXNobWVudC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/enterprise-hrms---asp.net-core-mvc/HRMS.Web/Views/Leave/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTGVhdmVcSW5kZXguY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/enterprise-hrms---asp.net-core-mvc/HRMS.Web/Views/Leave/Types.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTGVhdmVcVHlwZXMuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/enterprise-hrms---asp.net-core-mvc/HRMS.Web/Views/Loan/Details.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTG9hblxEZXRhaWxzLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/enterprise-hrms---asp.net-core-mvc/HRMS.Web/Views/Loan/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTG9hblxJbmRleC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/enterprise-hrms---asp.net-core-mvc/HRMS.Web/Views/Loan/Types.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTG9hblxUeXBlcy5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/enterprise-hrms---asp.net-core-mvc/HRMS.Web/Views/ManagerPortal/Approvals.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTWFuYWdlclBvcnRhbFxBcHByb3ZhbHMuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/enterprise-hrms---asp.net-core-mvc/HRMS.Web/Views/ManagerPortal/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTWFuYWdlclBvcnRhbFxJbmRleC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/enterprise-hrms---asp.net-core-mvc/HRMS.Web/Views/ManagerPortal/Team.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTWFuYWdlclBvcnRhbFxUZWFtLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/enterprise-hrms---asp.net-core-mvc/HRMS.Web/Views/Notifications/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTm90aWZpY2F0aW9uc1xJbmRleC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/enterprise-hrms---asp.net-core-mvc/HRMS.Web/Views/Organization/Locations.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcT3JnYW5pemF0aW9uXExvY2F0aW9ucy5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/enterprise-hrms---asp.net-core-mvc/HRMS.Web/Views/Organization/OrgChart.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcT3JnYW5pemF0aW9uXE9yZ0NoYXJ0LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/enterprise-hrms---asp.net-core-mvc/HRMS.Web/Views/Organization/Positions.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcT3JnYW5pemF0aW9uXFBvc2l0aW9ucy5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/enterprise-hrms---asp.net-core-mvc/HRMS.Web/Views/Organization/Shifts.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcT3JnYW5pemF0aW9uXFNoaWZ0cy5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/enterprise-hrms---asp.net-core-mvc/HRMS.Web/Views/Organization/_DepartmentTreeNodes.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcT3JnYW5pemF0aW9uXF9EZXBhcnRtZW50VHJlZU5vZGVzLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/enterprise-hrms---asp.net-core-mvc/HRMS.Web/Views/Organization/_EmployeeTreeNodes.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcT3JnYW5pemF0aW9uXF9FbXBsb3llZVRyZWVOb2Rlcy5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/enterprise-hrms---asp.net-core-mvc/HRMS.Web/Views/Payroll/Components.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUGF5cm9sbFxDb21wb25lbnRzLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/enterprise-hrms---asp.net-core-mvc/HRMS.Web/Views/Payroll/Details.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUGF5cm9sbFxEZXRhaWxzLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/enterprise-hrms---asp.net-core-mvc/HRMS.Web/Views/Payroll/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUGF5cm9sbFxJbmRleC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/enterprise-hrms---asp.net-core-mvc/HRMS.Web/Views/Payroll/Payslip.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUGF5cm9sbFxQYXlzbGlwLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/enterprise-hrms---asp.net-core-mvc/HRMS.Web/Views/Payroll/Structures.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUGF5cm9sbFxTdHJ1Y3R1cmVzLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/enterprise-hrms---asp.net-core-mvc/HRMS.Web/Views/Performance/Cycles.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUGVyZm9ybWFuY2VcQ3ljbGVzLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/enterprise-hrms---asp.net-core-mvc/HRMS.Web/Views/Performance/Goals.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUGVyZm9ybWFuY2VcR29hbHMuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/enterprise-hrms---asp.net-core-mvc/HRMS.Web/Views/Performance/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUGVyZm9ybWFuY2VcSW5kZXguY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/enterprise-hrms---asp.net-core-mvc/HRMS.Web/Views/Recruitment/Candidates.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUmVjcnVpdG1lbnRcQ2FuZGlkYXRlcy5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/enterprise-hrms---asp.net-core-mvc/HRMS.Web/Views/Recruitment/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUmVjcnVpdG1lbnRcSW5kZXguY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/enterprise-hrms---asp.net-core-mvc/HRMS.Web/Views/Recruitment/Interviews.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUmVjcnVpdG1lbnRcSW50ZXJ2aWV3cy5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/enterprise-hrms---asp.net-core-mvc/HRMS.Web/Views/Recruitment/Offers.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUmVjcnVpdG1lbnRcT2ZmZXJzLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/enterprise-hrms---asp.net-core-mvc/HRMS.Web/Views/Recruitment/Pipeline.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUmVjcnVpdG1lbnRcUGlwZWxpbmUuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/enterprise-hrms---asp.net-core-mvc/HRMS.Web/Views/Reports/AttendanceLeave.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUmVwb3J0c1xBdHRlbmRhbmNlTGVhdmUuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/enterprise-hrms---asp.net-core-mvc/HRMS.Web/Views/Reports/FinancialCompliance.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUmVwb3J0c1xGaW5hbmNpYWxDb21wbGlhbmNlLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/enterprise-hrms---asp.net-core-mvc/HRMS.Web/Views/Reports/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUmVwb3J0c1xJbmRleC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/enterprise-hrms---asp.net-core-mvc/HRMS.Web/Views/Reports/PayrollCost.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUmVwb3J0c1xQYXlyb2xsQ29zdC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/enterprise-hrms---asp.net-core-mvc/HRMS.Web/Views/Reports/TalentRecruitment.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUmVwb3J0c1xUYWxlbnRSZWNydWl0bWVudC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/enterprise-hrms---asp.net-core-mvc/HRMS.Web/Views/Reports/Workforce.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUmVwb3J0c1xXb3JrZm9yY2UuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/enterprise-hrms---asp.net-core-mvc/HRMS.Web/Views/SelfService/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2VsZlNlcnZpY2VcSW5kZXguY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/enterprise-hrms---asp.net-core-mvc/HRMS.Web/Views/SelfService/MyAttendance.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2VsZlNlcnZpY2VcTXlBdHRlbmRhbmNlLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/enterprise-hrms---asp.net-core-mvc/HRMS.Web/Views/SelfService/MyPayslips.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2VsZlNlcnZpY2VcTXlQYXlzbGlwcy5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/enterprise-hrms---asp.net-core-mvc/HRMS.Web/Views/SelfService/MyProfile.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2VsZlNlcnZpY2VcTXlQcm9maWxlLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/enterprise-hrms---asp.net-core-mvc/HRMS.Web/Views/Shared/_AuthLayout.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXF9BdXRoTGF5b3V0LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/enterprise-hrms---asp.net-core-mvc/HRMS.Web/Views/Shared/_Layout.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXF9MYXlvdXQuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/enterprise-hrms---asp.net-core-mvc/HRMS.Web/Views/Shared/_Sidebar.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXF9TaWRlYmFyLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/enterprise-hrms---asp.net-core-mvc/HRMS.Web/Views/Shared/_TopNavbar.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXF9Ub3BOYXZiYXIuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/enterprise-hrms---asp.net-core-mvc/HRMS.Web/Views/Shared/_ValidationScriptsPartial.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXF9WYWxpZGF0aW9uU2NyaXB0c1BhcnRpYWwuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/enterprise-hrms---asp.net-core-mvc/HRMS.Web/Views/SystemAdmin/AccessControl.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU3lzdGVtQWRtaW5cQWNjZXNzQ29udHJvbC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/enterprise-hrms---asp.net-core-mvc/HRMS.Web/Views/SystemAdmin/AuditLogs.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU3lzdGVtQWRtaW5cQXVkaXRMb2dzLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/enterprise-hrms---asp.net-core-mvc/HRMS.Web/Views/SystemAdmin/Settings.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU3lzdGVtQWRtaW5cU2V0dGluZ3MuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/enterprise-hrms---asp.net-core-mvc/HRMS.Web/Views/SystemAdmin/SystemHealth.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU3lzdGVtQWRtaW5cU3lzdGVtSGVhbHRoLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/enterprise-hrms---asp.net-core-mvc/HRMS.Web/Views/Training/Enrollments.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcVHJhaW5pbmdcRW5yb2xsbWVudHMuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/enterprise-hrms---asp.net-core-mvc/HRMS.Web/Views/Training/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcVHJhaW5pbmdcSW5kZXguY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/enterprise-hrms---asp.net-core-mvc/HRMS.Web/Views/Workflow/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcV29ya2Zsb3dcSW5kZXguY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/enterprise-hrms---asp.net-core-mvc/HRMS.Web/Views/_ViewImports.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcX1ZpZXdJbXBvcnRzLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/enterprise-hrms---asp.net-core-mvc/HRMS.Web/Views/_ViewStart.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcX1ZpZXdTdGFydC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 

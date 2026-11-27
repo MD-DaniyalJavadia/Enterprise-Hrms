@@ -1,0 +1,119 @@
+@model MonthlyAttendanceReportPageViewModel
+@{
+    ViewData["Title"] = "Monthly Attendance Report";
+    ViewData["BreadcrumbParent"] = "Attendance & Shifts";
+    var monthName = new DateTime(Model.Year, Model.Month, 1).ToString("MMMM yyyy");
+}
+
+@section PageActions {
+    <div class="d-flex gap-2">
+        <a asp-action="Index" class="btn btn-outline-secondary btn-sm"><i class="bi bi-calendar-check me-1"></i>Daily Register</a>
+        <a asp-action="ExportMonthly" asp-route-year="@Model.Year" asp-route-month="@Model.Month" asp-route-branchId="@Model.BranchId" asp-route-departmentId="@Model.DepartmentId" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-file-earmark-spreadsheet me-1"></i>Export CSV
+        </a>
+    </div>
+}
+
+<div class="card border-0 shadow-sm mb-3">
+    <div class="card-body py-3">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-md-2">
+                <label class="form-label small fw-semibold">Year</label>
+                <select name="year" class="form-select form-select-sm">
+                    @for (int y = DateTime.Today.Year - 2; y <= DateTime.Today.Year + 1; y++)
+                    {
+                        <option value="@y" selected="@(Model.Year == y)">@y</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small fw-semibold">Month</label>
+                <select name="month" class="form-select form-select-sm">
+                    @for (int m = 1; m <= 12; m++)
+                    {
+                        <option value="@m" selected="@(Model.Month == m)">@(new DateTime(2026, m, 1).ToString("MMMM"))</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small fw-semibold">Branch</label>
+                <select name="branchId" class="form-select form-select-sm">
+                    <option value="">All Branches</option>
+                    @foreach (var b in Model.Branches)
+                    {
+                        <option value="@b.BranchId" selected="@(Model.BranchId == b.BranchId)">@b.BranchName</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small fw-semibold">Department</label>
+                <select name="departmentId" class="form-select form-select-sm">
+                    <option value="">All Departments</option>
+                    @foreach (var d in Model.Departments)
+                    {
+                        <option value="@d.DepartmentId" selected="@(Model.DepartmentId == d.DepartmentId)">@d.DepartmentName</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-1 d-grid">
+                <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-funnel"></i></button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-transparent fw-semibold py-3">Attendance Summary — @monthName</div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle hrms-att-datatable w-100">
+                <thead>
+                    <tr>
+                        <th>Code</th>
+                        <th>Employee</th>
+                        <th>Department</th>
+                        <th class="text-center">Present</th>
+                        <th class="text-center">Late</th>
+                        <th class="text-center">Absent</th>
+                        <th class="text-center">Half</th>
+                        <th class="text-center">Leave</th>
+                        <th class="text-end">Work Hrs</th>
+                        <th class="text-end">Late (Min)</th>
+                        <th class="text-end">OT (Hrs)</th>
+                        <th class="text-end">Calendar</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model.Items)
+                    {
+                        <tr>
+                            <td class="fw-semibold">@item.EmployeeCode</td>
+                            <td>
+                                <div class="fw-semibold">@item.FullName</div>
+                                <div class="small text-body-secondary">@item.BranchName</div>
+                            </td>
+                            <td>@item.DepartmentName</td>
+                            <td class="text-center fw-semibold text-success">@item.PresentDays</td>
+                            <td class="text-center fw-semibold text-warning">@item.LateDays</td>
+                            <td class="text-center fw-semibold text-danger">@item.AbsentDays</td>
+                            <td class="text-center">@item.HalfDays</td>
+                            <td class="text-center text-info">@item.LeaveDays</td>
+                            <td class="text-end fw-semibold">@item.TotalWorkHours</td>
+                            <td class="text-end">@item.TotalLateMinutes</td>
+                            <td class="text-end text-primary fw-semibold">@item.TotalOvertimeHours</td>
+                            <td class="text-end">
+                                <a asp-action="EmployeeCalendar" asp-route-employeeId="@item.EmployeeId" asp-route-year="@Model.Year" asp-route-month="@Model.Month" class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-calendar3"></i>
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/attendance.js" asp-append-version="true"></script>
+}

@@ -1,0 +1,157 @@
+@model AttendanceLeaveReportPageViewModel
+@{
+    ViewData["Title"] = "Attendance Punctuality & Leave Utilization Report";
+    ViewData["BreadcrumbParent"] = "Reports & Analytics";
+    var totalHours = Model.Rows.Sum(x => x.TotalWorkHours);
+    var totalOt = Model.Rows.Sum(x => x.TotalOvertimeHours);
+    var totalLeave = Model.Rows.Sum(x => x.ApprovedLeaveDays);
+    var totalLate = Model.Rows.Sum(x => x.LateDays);
+}
+
+@section PageActions {
+    <div class="d-flex flex-wrap gap-2">
+        <a asp-action="Index" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left me-1"></i>Analytics Hub
+        </a>
+        @if (Model.CanExport)
+        {
+            <button type="button" class="btn btn-outline-secondary btn-sm"
+                    onclick="HrmsReports.printReport('AttendanceLeave', 'Attendance & Leave Utilization Report', @Model.Rows.Count, '@Model.FromDate.ToString("yyyy-MM-dd") to @Model.ToDate.ToString("yyyy-MM-dd")')">
+                <i class="bi bi-printer me-1"></i>Print / PDF
+            </button>
+            <a asp-action="ExportAttendanceLeave" asp-route-branchId="@Model.BranchId" asp-route-departmentId="@Model.DepartmentId"
+               asp-route-fromDate="@Model.FromDate.ToString("yyyy-MM-dd")" asp-route-toDate="@Model.ToDate.ToString("yyyy-MM-dd")"
+               class="btn btn-success btn-sm">
+                <i class="bi bi-file-earmark-spreadsheet me-1"></i>Export CSV
+            </a>
+        }
+    </div>
+}
+
+<div class="row g-3 mb-3">
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body py-3">
+                <div class="small text-body-secondary fw-semibold">Total Logged Hours</div>
+                <div class="fs-4 fw-bold text-primary">@totalHours.ToString("N1") <span class="fs-6 fw-normal text-body-secondary">hrs</span></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body py-3">
+                <div class="small text-success fw-semibold">Overtime Hours</div>
+                <div class="fs-4 fw-bold text-success">@totalOt.ToString("N1") <span class="fs-6 fw-normal text-body-secondary">hrs</span></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body py-3">
+                <div class="small text-warning fw-semibold">Total Late Incidents</div>
+                <div class="fs-4 fw-bold text-warning">@totalLate</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body py-3">
+                <div class="small text-info fw-semibold">Approved Leave Days</div>
+                <div class="fs-4 fw-bold text-info">@totalLeave.ToString("N1")</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm mb-3">
+    <div class="card-body py-3">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label small fw-semibold">Branch</label>
+                <select name="branchId" class="form-select form-select-sm">
+                    <option value="">All Branches</option>
+                    @foreach (var b in Model.Branches)
+                    {
+                        <option value="@b.BranchId" selected="@(Model.BranchId == b.BranchId)">@b.BranchName</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small fw-semibold">Department</label>
+                <select name="departmentId" class="form-select form-select-sm">
+                    <option value="">All Departments</option>
+                    @foreach (var d in Model.Departments)
+                    {
+                        <option value="@d.DepartmentId" selected="@(Model.DepartmentId == d.DepartmentId)">@d.DepartmentName</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small fw-semibold">From Date</label>
+                <input type="date" name="fromDate" class="form-control form-control-sm" value="@Model.FromDate.ToString("yyyy-MM-dd")" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small fw-semibold">To Date</label>
+                <input type="date" name="toDate" class="form-control form-control-sm" value="@Model.ToDate.ToString("yyyy-MM-dd")" />
+            </div>
+            <div class="col-md-2 d-flex gap-2">
+                <button type="submit" class="btn btn-primary btn-sm flex-fill"><i class="bi bi-funnel me-1"></i>Generate</button>
+                <a asp-action="AttendanceLeave" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-counterclockwise"></i></a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle hrms-rep-datatable w-100">
+                <thead>
+                    <tr>
+                        <th>Employee</th>
+                        <th>Department</th>
+                        <th class="text-center">Present</th>
+                        <th class="text-center">Late (Min)</th>
+                        <th class="text-center">Absent</th>
+                        <th class="text-end">Work Hrs</th>
+                        <th class="text-end">OT Hrs</th>
+                        <th class="text-end">Leave Taken</th>
+                        <th class="text-end">Leave Bal.</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var row in Model.Rows)
+                    {
+                        <tr>
+                            <td class="small">
+                                <div class="fw-semibold">@row.EmployeeName</div>
+                                <div class="text-body-secondary font-monospace">@row.EmployeeCode</div>
+                            </td>
+                            <td class="small">
+                                <div>@row.DepartmentName</div>
+                                <div class="text-body-secondary">@row.BranchName</div>
+                            </td>
+                            <td class="text-center small fw-semibold text-success">@row.PresentDays</td>
+                            <td class="text-center small">
+                                <span class="@(row.LateDays > 0 ? "text-warning fw-semibold" : "text-body-secondary")">
+                                    @row.LateDays (@row.TotalLateMinutes m)
+                                </span>
+                            </td>
+                            <td class="text-center small">
+                                <span class="@(row.AbsentDays > 0 ? "text-danger fw-semibold" : "text-body-secondary")">@row.AbsentDays</span>
+                            </td>
+                            <td class="text-end small font-monospace">@row.TotalWorkHours.ToString("F1")</td>
+                            <td class="text-end small font-monospace text-primary">@row.TotalOvertimeHours.ToString("F1")</td>
+                            <td class="text-end small font-monospace">@row.ApprovedLeaveDays.ToString("F1")</td>
+                            <td class="text-end small font-monospace fw-semibold">@row.RemainingLeaveBalance.ToString("F1")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/reports.js" asp-append-version="true"></script>
+}

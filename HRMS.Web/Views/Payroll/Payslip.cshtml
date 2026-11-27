@@ -1,0 +1,164 @@
+@model PayslipDetailViewModel
+@{
+    var p = Model.Payslip;
+    ViewData["Title"] = $"Payslip - {p.PeriodLabel}";
+    ViewData["BreadcrumbParent"] = "Payroll";
+    var earnings = Model.Lines.Where(l => l.ComponentType == "Earning").ToList();
+    var deductions = Model.Lines.Where(l => l.ComponentType == "Deduction").ToList();
+    var contributions = Model.Lines.Where(l => l.ComponentType == "EmployerContribution").ToList();
+}
+
+@section PageActions {
+    <div class="d-flex gap-2 d-print-none">
+        @if (string.Equals(ViewContext.RouteData.Values["controller"]?.ToString(), "SelfService", StringComparison.OrdinalIgnoreCase))
+        {
+            <a asp-controller="SelfService" asp-action="MyPayslips" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-arrow-left me-1"></i>Back to My Payslips
+            </a>
+        }
+        else
+        {
+            <a asp-controller="Payroll" asp-action="Details" asp-route-id="@p.PayrollRunId" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-arrow-left me-1"></i>Back to Batch
+            </a>
+        }
+        <button type="button" class="btn btn-primary btn-sm" onclick="window.print()">
+            <i class="bi bi-printer me-1"></i>Print / Save PDF
+        </button>
+    </div>
+}
+
+<div class="card border-0 shadow-sm mx-auto" style="max-width: 960px;">
+    <div class="card-body p-4 p-md-5">
+        <!-- Header -->
+        <div class="d-flex flex-wrap justify-content-between align-items-start border-bottom pb-4 mb-4 gap-3">
+            <div>
+                <h4 class="fw-bold mb-1">@(p.LegalName ?? p.CompanyName)</h4>
+                @if (!string.IsNullOrWhiteSpace(p.CompanyAddress))
+                {
+                    <div class="small text-body-secondary">@p.CompanyAddress</div>
+                }
+                <div class="small text-body-secondary">@p.BranchName</div>
+            </div>
+            <div class="text-md-end">
+                <div class="text-uppercase small fw-bold text-primary">Salary Statement / Payslip</div>
+                <div class="fs-5 fw-bold">@p.PeriodLabel</div>
+                <div class="small text-body-secondary">
+                    Pay Date: @(p.PayDate?.ToString("dd MMM yyyy") ?? "-") &bull; Status: <strong>@p.PaymentStatus</strong>
+                </div>
+            </div>
+        </div>
+
+        <!-- Employee Info -->
+        <div class="row g-3 bg-body-tertiary rounded-3 p-3 mb-4 small">
+            <div class="col-md-6">
+                <div class="row g-2">
+                    <div class="col-5 text-body-secondary">Employee Name:</div>
+                    <div class="col-7 fw-semibold">@p.FullName</div>
+                    <div class="col-5 text-body-secondary">Employee Code:</div>
+                    <div class="col-7 fw-semibold">@p.EmployeeCode</div>
+                    <div class="col-5 text-body-secondary">Department:</div>
+                    <div class="col-7">@p.DepartmentName</div>
+                    <div class="col-5 text-body-secondary">Designation:</div>
+                    <div class="col-7">@p.DesignationTitle</div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="row g-2">
+                    <div class="col-5 text-body-secondary">Payment Method:</div>
+                    <div class="col-7 fw-semibold">@p.PaymentMethod</div>
+                    <div class="col-5 text-body-secondary">Bank / Account:</div>
+                    <div class="col-7">@(string.IsNullOrWhiteSpace(p.BankName) ? "-" : $"{p.BankName} ({p.BankAccountNumber})")</div>
+                    <div class="col-5 text-body-secondary">Tax ID (TIN):</div>
+                    <div class="col-7">@(p.TaxIdentificationNumber ?? "-")</div>
+                    <div class="col-5 text-body-secondary">Paid / Working Days:</div>
+                    <div class="col-7">@p.PaidDays.ToString("0.##") / @p.WorkingDaysInMonth.ToString("0.##") @(p.OvertimeHours > 0 ? $"({p.OvertimeHours:0.##}h OT)" : "")</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Earnings & Deductions Breakdown -->
+        <div class="row g-4 mb-4">
+            <div class="col-md-6">
+                <h6 class="fw-bold text-uppercase small text-success border-bottom pb-2 mb-2">Earnings</h6>
+                <table class="table table-sm mb-0">
+                    <tbody>
+                        @foreach (var line in earnings)
+                        {
+                            <tr>
+                                <td>@line.ComponentName <span class="text-body-secondary small">(@line.ComponentCode)</span></td>
+                                <td class="text-end fw-medium">@line.Amount.ToString("N2")</td>
+                            </tr>
+                        }
+                    </tbody>
+                    <tfoot class="table-light">
+                        <tr>
+                            <th>Total Gross Earnings</th>
+                            <th class="text-end">@p.GrossPay.ToString("N2") @p.CurrencyCode</th>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+            <div class="col-md-6">
+                <h6 class="fw-bold text-uppercase small text-danger border-bottom pb-2 mb-2">Deductions</h6>
+                <table class="table table-sm mb-0">
+                    <tbody>
+                        @if (deductions.Any())
+                        {
+                            @foreach (var line in deductions)
+                            {
+                                <tr>
+                                    <td>@line.ComponentName <span class="text-body-secondary small">(@line.ComponentCode)</span></td>
+                                    <td class="text-end fw-medium">@line.Amount.ToString("N2")</td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="2" class="text-body-secondary small">No deductions for this period</td>
+                            </tr>
+                        }
+                    </tbody>
+                    <tfoot class="table-light">
+                        <tr>
+                            <th>Total Deductions</th>
+                            <th class="text-end text-danger">@p.TotalDeductions.ToString("N2") @p.CurrencyCode</th>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+
+        <!-- Net Pay Highlight -->
+        <div class="p-3 rounded-3 bg-primary-subtle border border-primary-subtle d-flex flex-wrap justify-content-between align-items-center mb-4">
+            <div>
+                <div class="small text-uppercase fw-bold text-primary-emphasis">Net Salary Payable</div>
+                <div class="small text-body-secondary">Gross Pay minus Total Deductions</div>
+            </div>
+            <div class="fs-3 fw-bold text-primary-emphasis">@p.NetPay.ToString("N2") @p.CurrencyCode</div>
+        </div>
+
+        @if (contributions.Any())
+        {
+            <div class="border-top pt-3 small">
+                <div class="fw-semibold text-body-secondary mb-2">Employer Contributions (Informational — Not Deducted from Net Pay)</div>
+                <div class="d-flex flex-wrap gap-3">
+                    @foreach (var c in contributions)
+                    {
+                        <span class="badge bg-body-secondary text-body-emphasis px-3 py-2">
+                            @c.ComponentName: @c.Amount.ToString("N2") @p.CurrencyCode
+                        </span>
+                    }
+                </div>
+            </div>
+        }
+
+        @if (!string.IsNullOrWhiteSpace(p.Notes))
+        {
+            <div class="border-top mt-3 pt-3 small text-body-secondary">
+                <strong>Notes:</strong> @p.Notes
+            </div>
+        }
+    </div>
+</div>

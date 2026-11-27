@@ -1,0 +1,49 @@
+@model DesignationFormViewModel
+@{ var isEdit = Model.DesignationId > 0; }
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-transparent border-bottom py-3">
+        <h2 class="h6 fw-bold mb-0"><i class="bi bi-award me-2 text-primary"></i>@(isEdit ? $"Edit Designation: {Model.DesignationTitle}" : "New Designation")</h2>
+    </div>
+    <div class="card-body p-4">
+        <form asp-action="@(isEdit ? "Edit" : "Create")" method="post" novalidate>
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="DesignationId" />
+            <input type="hidden" asp-for="CompanyId" />
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger small py-2"></div>
+
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label asp-for="DesignationCode" class="form-label small fw-semibold"></label>
+                    <input asp-for="DesignationCode" class="form-control" placeholder="e.g. SWE-SR" />
+                    <span asp-validation-for="DesignationCode" class="text-danger small"></span>
+                </div>
+                <div class="col-md-5">
+                    <label asp-for="DesignationTitle" class="form-label small fw-semibold"></label>
+                    <input asp-for="DesignationTitle" class="form-control" />
+                    <span asp-validation-for="DesignationTitle" class="text-danger small"></span>
+                </div>
+                <div class="col-md-3">
+                    <label asp-for="JobGrade" class="form-label small fw-semibold"></label>
+                    <select asp-for="JobGrade" class="form-select hrms-select2">
+                        <option value="">Select Grade</option>
+                        @foreach (var g in Model.AvailableJobGrades)
+                        {
+                            <option value="@g.GradeCode">@g.GradeCode - @g.GradeName</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-12">
+                    <div class="form-check form-switch">
+                        <input asp-for="IsActive" class="form-check-input" />
+                        <label asp-for="IsActive" class="form-check-label small fw-semibold"></label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-end gap-2 mt-4">
+                <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
+                <button type="submit" class="btn btn-primary"><i class="bi bi-check2-circle me-1"></i>@(isEdit ? "Update Designation" : "Save Designation")</button>
+            </div>
+        </form>
+    </div>
+</div>

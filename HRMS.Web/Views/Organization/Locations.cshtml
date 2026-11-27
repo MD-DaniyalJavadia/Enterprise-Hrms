@@ -1,0 +1,209 @@
+@model LocationsAndCostCentersPageViewModel
+@{
+    ViewData["Title"] = "Work Locations & Cost Centers";
+    ViewData["BreadcrumbParent"] = "Organization";
+}
+
+<ul class="nav nav-tabs mb-4" role="tablist">
+    <li class="nav-item">
+        <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tabLocations" type="button">
+            <i class="bi bi-pin-map me-1"></i>Work Locations (@Model.WorkLocations.Count)
+        </button>
+    </li>
+    <li class="nav-item">
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabCostCenters" type="button">
+            <i class="bi bi-wallet2 me-1"></i>Cost Centers (@Model.CostCenters.Count)
+        </button>
+    </li>
+</ul>
+
+<div class="tab-content">
+    <div class="tab-pane fade show active" id="tabLocations">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-transparent border-bottom py-3 d-flex justify-content-between align-items-center">
+                <h2 class="h6 fw-bold mb-0">Work Locations</h2>
+                @if (User.HasPermission("ORG.MANAGE"))
+                {
+                    <button type="button" class="btn btn-primary btn-sm" onclick="openLocationModal()"><i class="bi bi-plus-lg me-1"></i>Add Location</button>
+                }
+            </div>
+            <div class="card-body">
+                <table class="table table-hover align-middle hrms-datatable w-100">
+                    <thead>
+                        <tr><th>Code</th><th>Location Name</th><th>Branch</th><th>City / Country</th><th>Type</th><th>Time Zone</th><th>Status</th><th class="text-end">Actions</th></tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var wl in Model.WorkLocations)
+                        {
+                            <tr>
+                                <td class="fw-semibold">@wl.LocationCode</td>
+                                <td class="fw-semibold">@wl.LocationName</td>
+                                <td>@(wl.BranchName ?? "Global")</td>
+                                <td>@wl.City@(string.IsNullOrEmpty(wl.Country) ? "" : $", {wl.Country}")</td>
+                                <td><span class="badge @(wl.IsRemote ? "bg-info-subtle text-info-emphasis" : "bg-secondary-subtle text-secondary-emphasis")">@(wl.IsRemote ? "Remote" : "On-Site")</span></td>
+                                <td class="small">@wl.TimeZoneId</td>
+                                <td><span class="badge @(wl.IsActive ? "bg-success-subtle text-success-emphasis" : "bg-danger-subtle text-danger-emphasis")">@(wl.IsActive ? "Active" : "Inactive")</span></td>
+                                <td class="text-end text-nowrap">
+                                    @if (User.HasPermission("ORG.MANAGE"))
+                                    {
+                                        <button type="button" class="btn btn-sm btn-outline-primary" onclick='editLocation(@Html.Raw(System.Text.Json.JsonSerializer.Serialize(wl)))'><i class="bi bi-pencil"></i></button>
+                                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="HrmsOrg.confirmDelete('@Url.Action("DeleteWorkLocation", new { id = wl.WorkLocationId })', 'Work Location')"><i class="bi bi-trash"></i></button>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="tab-pane fade" id="tabCostCenters">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-transparent border-bottom py-3 d-flex justify-content-between align-items-center">
+                <h2 class="h6 fw-bold mb-0">Cost Centers</h2>
+                @if (User.HasPermission("ORG.MANAGE"))
+                {
+                    <button type="button" class="btn btn-primary btn-sm" onclick="openCostCenterModal()"><i class="bi bi-plus-lg me-1"></i>Add Cost Center</button>
+                }
+            </div>
+            <div class="card-body">
+                <table class="table table-hover align-middle hrms-datatable w-100">
+                    <thead>
+                        <tr><th>Code</th><th>Cost Center Name</th><th>Branch</th><th>Description</th><th>Status</th><th class="text-end">Actions</th></tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var cc in Model.CostCenters)
+                        {
+                            <tr>
+                                <td class="fw-semibold">@cc.CostCenterCode</td>
+                                <td class="fw-semibold">@cc.CostCenterName</td>
+                                <td>@(cc.BranchName ?? "Corporate")</td>
+                                <td class="small text-body-secondary">@cc.Description</td>
+                                <td><span class="badge @(cc.IsActive ? "bg-success-subtle text-success-emphasis" : "bg-danger-subtle text-danger-emphasis")">@(cc.IsActive ? "Active" : "Inactive")</span></td>
+                                <td class="text-end text-nowrap">
+                                    @if (User.HasPermission("ORG.MANAGE"))
+                                    {
+                                        <button type="button" class="btn btn-sm btn-outline-primary" onclick='editCostCenter(@Html.Raw(System.Text.Json.JsonSerializer.Serialize(cc)))'><i class="bi bi-pencil"></i></button>
+                                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="HrmsOrg.confirmDelete('@Url.Action("DeleteCostCenter", new { id = cc.CostCenterId })', 'Cost Center')"><i class="bi bi-trash"></i></button>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Work Location Modal -->
+<div class="modal fade" id="locationModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form id="locationForm">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="WorkLocationId" id="locId" value="0" />
+                <div class="modal-header"><h5 class="modal-title" id="locationModalTitle">Work Location</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+                <div class="modal-body row g-3">
+                    <div class="col-md-4"><label class="form-label small fw-semibold">Code *</label><input type="text" name="LocationCode" id="locCode" class="form-control" required /></div>
+                    <div class="col-md-8"><label class="form-label small fw-semibold">Location Name *</label><input type="text" name="LocationName" id="locName" class="form-control" required /></div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Branch</label>
+                        <select name="BranchId" id="locBranch" class="form-select">
+                            <option value="">Global / Remote</option>
+                            @foreach (var b in Model.Branches) { <option value="@b.BranchId">@b.BranchName</option> }
+                        </select>
+                    </div>
+                    <div class="col-md-6"><label class="form-label small fw-semibold">Time Zone *</label><input type="text" name="TimeZoneId" id="locTz" class="form-control" value="UTC" required /></div>
+                    <div class="col-md-12"><label class="form-label small fw-semibold">Address</label><input type="text" name="AddressLine1" id="locAddr" class="form-control" /></div>
+                    <div class="col-md-6"><label class="form-label small fw-semibold">City</label><input type="text" name="City" id="locCity" class="form-control" /></div>
+                    <div class="col-md-6"><label class="form-label small fw-semibold">Country</label><input type="text" name="Country" id="locCountry" class="form-control" /></div>
+                    <div class="col-12 d-flex gap-4">
+                        <div class="form-check form-switch"><input type="checkbox" name="IsRemote" id="locRemote" value="true" class="form-check-input" /><label class="form-check-label small" for="locRemote">Remote Location</label></div>
+                        <div class="form-check form-switch"><input type="checkbox" name="IsActive" id="locActive" value="true" class="form-check-input" checked /><label class="form-check-label small" for="locActive">Active</label></div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="HrmsOrg.submitAjaxForm('#locationForm', '@Url.Action("SaveWorkLocation")', '#locationModal')">Save Location</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Cost Center Modal -->
+<div class="modal fade" id="costCenterModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="costCenterForm">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="CostCenterId" id="ccId" value="0" />
+                <div class="modal-header"><h5 class="modal-title" id="ccModalTitle">Cost Center</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+                <div class="modal-body row g-3">
+                    <div class="col-md-4"><label class="form-label small fw-semibold">Code *</label><input type="text" name="CostCenterCode" id="ccCode" class="form-control" required /></div>
+                    <div class="col-md-8"><label class="form-label small fw-semibold">Cost Center Name *</label><input type="text" name="CostCenterName" id="ccName" class="form-control" required /></div>
+                    <div class="col-12">
+                        <label class="form-label small fw-semibold">Branch</label>
+                        <select name="BranchId" id="ccBranch" class="form-select">
+                            <option value="">Corporate</option>
+                            @foreach (var b in Model.Branches) { <option value="@b.BranchId">@b.BranchName</option> }
+                        </select>
+                    </div>
+                    <div class="col-12"><label class="form-label small fw-semibold">Description</label><textarea name="Description" id="ccDesc" class="form-control" rows="2"></textarea></div>
+                    <div class="col-12"><div class="form-check form-switch"><input type="checkbox" name="IsActive" id="ccActive" value="true" class="form-check-input" checked /><label class="form-check-label small" for="ccActive">Active</label></div></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="HrmsOrg.submitAjaxForm('#costCenterForm', '@Url.Action("SaveCostCenter")', '#costCenterModal')">Save Cost Center</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/organization.js" asp-append-version="true"></script>
+    <script>
+        function openLocationModal() {
+            $('#locationForm')[0].reset();
+            $('#locId').val(0);
+            $('#locTz').val('UTC');
+            $('#locActive').prop('checked', true);
+            $('#locationModalTitle').text('New Work Location');
+            new bootstrap.Modal(document.getElementById('locationModal')).show();
+        }
+        function editLocation(wl) {
+            $('#locId').val(wl.WorkLocationId);
+            $('#locCode').val(wl.LocationCode);
+            $('#locName').val(wl.LocationName);
+            $('#locBranch').val(wl.BranchId || '');
+            $('#locTz').val(wl.TimeZoneId);
+            $('#locAddr').val(wl.AddressLine1 || '');
+            $('#locCity').val(wl.City || '');
+            $('#locCountry').val(wl.Country || '');
+            $('#locRemote').prop('checked', wl.IsRemote);
+            $('#locActive').prop('checked', wl.IsActive);
+            $('#locationModalTitle').text('Edit Work Location');
+            new bootstrap.Modal(document.getElementById('locationModal')).show();
+        }
+        function openCostCenterModal() {
+            $('#costCenterForm')[0].reset();
+            $('#ccId').val(0);
+            $('#ccActive').prop('checked', true);
+            $('#ccModalTitle').text('New Cost Center');
+            new bootstrap.Modal(document.getElementById('costCenterModal')).show();
+        }
+        function editCostCenter(cc) {
+            $('#ccId').val(cc.CostCenterId);
+            $('#ccCode').val(cc.CostCenterCode);
+            $('#ccName').val(cc.CostCenterName);
+            $('#ccBranch').val(cc.BranchId || '');
+            $('#ccDesc').val(cc.Description || '');
+            $('#ccActive').prop('checked', cc.IsActive);
+            $('#ccModalTitle').text('Edit Cost Center');
+            new bootstrap.Modal(document.getElementById('costCenterModal')).show();
+        }
+    </script>
+}

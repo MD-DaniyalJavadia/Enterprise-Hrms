@@ -1,0 +1,7 @@
+@model BranchFormViewModel
+@{
+    ViewData["Title"] = "Edit Branch";
+    ViewData["BreadcrumbParent"] = "Branches";
+}
+<partial name="_BranchForm" model="Model" />
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

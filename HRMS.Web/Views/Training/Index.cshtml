@@ -1,0 +1,291 @@
+@using System.Text.Json
+@model TrainingIndexPageViewModel
+@{
+    ViewData["Title"] = "Training Programs";
+    ViewData["BreadcrumbParent"] = "Performance & Training";
+    var canManage = User.HasPermission("TRAINING.MANAGE");
+    var camelOpts = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+}
+
+@section PageActions {
+    <div class="d-flex flex-wrap gap-2">
+        <a asp-action="Enrollments" class="btn btn-outline-primary btn-sm">
+            <i class="bi bi-patch-check me-1"></i>Enrollments &amp; Certificates
+        </a>
+        @if (canManage)
+        {
+            <button type="button" class="btn btn-primary btn-sm" onclick="HrmsPerfTrn.openProgramModal()">
+                <i class="bi bi-plus-lg me-1"></i>New Training Program
+            </button>
+        }
+    </div>
+}
+
+<!-- KPI Summary Strip -->
+<div class="row g-3 mb-3">
+    <div class="col-6 col-md-4 col-xl">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body py-3">
+                <div class="small text-body-secondary fw-semibold">Total Programs</div>
+                <div class="fs-4 fw-bold">@Model.Kpi.TotalPrograms</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-4 col-xl">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body py-3">
+                <div class="small text-primary fw-semibold">Active / Planned</div>
+                <div class="fs-4 fw-bold text-primary">@Model.Kpi.ActiveOrPlannedPrograms</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-4 col-xl">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body py-3">
+                <div class="small text-info fw-semibold">Total Enrollments</div>
+                <div class="fs-4 fw-bold text-info">@Model.Kpi.TotalEnrollments</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-6 col-xl">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body py-3">
+                <div class="small text-success fw-semibold">Completed Sessions</div>
+                <div class="fs-4 fw-bold text-success">@Model.Kpi.CompletedEnrollments</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-md-6 col-xl">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body py-3">
+                <div class="small text-success fw-semibold">Completion Rate</div>
+                <div class="fs-4 fw-bold text-success">@Model.Kpi.CompletionRatePercent.ToString("0.0")%</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filter Strip -->
+<div class="card border-0 shadow-sm mb-3">
+    <div class="card-body py-3">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label small fw-semibold">Category</label>
+                <select name="category" class="form-select form-select-sm">
+                    <option value="">All Categories</option>
+                    @foreach (var cat in new[] { "Technical", "Leadership", "Compliance", "SoftSkills", "Onboarding" })
+                    {
+                        <option value="@cat" selected="@(string.Equals(Model.Category, cat, StringComparison.OrdinalIgnoreCase))">@cat</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small fw-semibold">Status</label>
+                <select name="status" class="form-select form-select-sm">
+                    <option value="">All Statuses</option>
+                    @foreach (var st in new[] { "Planned", "Ongoing", "Completed", "Cancelled" })
+                    {
+                        <option value="@st" selected="@(string.Equals(Model.Status, st, StringComparison.OrdinalIgnoreCase))">@st</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label small fw-semibold">Search</label>
+                <input type="text" name="search" class="form-control form-control-sm" value="@Model.SearchTerm" placeholder="Code, program title, trainer..." />
+            </div>
+            <div class="col-md-2 d-flex gap-2">
+                <button type="submit" class="btn btn-primary btn-sm flex-fill"><i class="bi bi-funnel me-1"></i>Filter</button>
+                <a asp-action="Index" class="btn btn-outline-secondary btn-sm" title="Reset"><i class="bi bi-arrow-counterclockwise"></i></a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Programs Table -->
+<div class="card border-0 shadow-sm">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle hrms-pt-datatable w-100">
+                <thead>
+                    <tr>
+                        <th>Code &amp; Program</th>
+                        <th>Category / Mode</th>
+                        <th>Schedule &amp; Trainer</th>
+                        <th class="text-center">Seats</th>
+                        <th>Status</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var p in Model.Programs)
+                    {
+                        var badge = p.ProgramStatus switch
+                        {
+                            "Completed" => "bg-success-subtle text-success-emphasis",
+                            "Ongoing" => "bg-primary-subtle text-primary-emphasis",
+                            "Cancelled" => "bg-danger-subtle text-danger-emphasis",
+                            _ => "bg-warning-subtle text-warning-emphasis"
+                        };
+                        var hasSafeUrl = Uri.TryCreate(p.LocationOrUrl, UriKind.Absolute, out var locUri)
+                            && (locUri.Scheme == Uri.UriSchemeHttp || locUri.Scheme == Uri.UriSchemeHttps);
+                        <tr>
+                            <td>
+                                <div class="fw-semibold">
+                                    <a asp-action="Enrollments" asp-route-programId="@p.ProgramId" class="text-decoration-none">@p.ProgramTitle</a>
+                                    @if (p.IsMandatory)
+                                    {
+                                        <span class="badge bg-danger-subtle text-danger-emphasis ms-1">Mandatory</span>
+                                    }
+                                </div>
+                                <div class="small text-body-secondary">
+                                    <span class="badge bg-light text-dark border me-1">@p.ProgramCode</span>
+                                    @if (hasSafeUrl && locUri is not null)
+                                    {
+                                        <a href="@locUri.AbsoluteUri" target="_blank" rel="noopener noreferrer">Course Portal</a>
+                                    }
+                                    else if (!string.IsNullOrWhiteSpace(p.LocationOrUrl))
+                                    {
+                                        <span>@p.LocationOrUrl</span>
+                                    }
+                                </div>
+                            </td>
+                            <td class="small">
+                                <div class="fw-medium">@p.Category</div>
+                                <div class="text-body-secondary">@p.DeliveryMode &bull; @p.DurationHours.ToString("0.0") hrs</div>
+                            </td>
+                            <td class="small">
+                                <div>@p.StartDate.ToString("dd MMM") &ndash; @p.EndDate.ToString("dd MMM yyyy")</div>
+                                <div class="text-body-secondary">@(p.TrainerOrProvider ?? "Internal")</div>
+                            </td>
+                            <td class="text-center small">
+                                <div class="fw-semibold">@p.EnrolledCount / @p.MaxParticipants</div>
+                                <div class="text-success">@p.CompletedCount completed</div>
+                            </td>
+                            <td><span class="badge @badge">@p.ProgramStatus</span></td>
+                            <td class="text-end text-nowrap">
+                                <a asp-action="Enrollments" asp-route-programId="@p.ProgramId" class="btn btn-sm btn-outline-info" title="View Roster">
+                                    <i class="bi bi-people"></i>
+                                </a>
+                                @if (canManage)
+                                {
+                                    <button type="button" class="btn btn-sm btn-outline-primary" title="Edit Program"
+                                            onclick='HrmsPerfTrn.openProgramModal(@Html.Raw(JsonSerializer.Serialize(p, camelOpts)))'>
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    @if (p.EnrolledCount == 0)
+                                    {
+                                        <button type="button" class="btn btn-sm btn-outline-danger" title="Delete Program"
+                                                onclick='HrmsPerfTrn.deleteProgram(@p.ProgramId, @Html.Raw(JsonSerializer.Serialize(p.ProgramTitle)))'>
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    }
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@if (canManage)
+{
+    <div class="modal fade" id="programModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="prgModalTitle">Create Training Program</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="programForm" onsubmit="event.preventDefault(); HrmsPerfTrn.submitAjaxForm('#programForm', '@Url.Action("SaveProgram")', '#programModal');">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" id="prgId" name="ProgramId" value="0" />
+                    <div class="modal-body">
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="form-label small fw-semibold">Program Code <span class="text-danger">*</span></label>
+                                <input type="text" id="prgCode" name="ProgramCode" class="form-control" maxlength="25" required />
+                            </div>
+                            <div class="col-md-8">
+                                <label class="form-label small fw-semibold">Program Title <span class="text-danger">*</span></label>
+                                <input type="text" id="prgTitle" name="ProgramTitle" class="form-control" maxlength="150" required />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small fw-semibold">Category</label>
+                                <select id="prgCat" name="Category" class="form-select" required>
+                                    <option value="Technical">Technical</option>
+                                    <option value="Leadership">Leadership</option>
+                                    <option value="Compliance">Compliance</option>
+                                    <option value="SoftSkills">Soft Skills</option>
+                                    <option value="Onboarding">Onboarding</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small fw-semibold">Delivery Mode</label>
+                                <select id="prgMode" name="DeliveryMode" class="form-select" required>
+                                    <option value="Workshop">Workshop</option>
+                                    <option value="Online">Online</option>
+                                    <option value="Classroom">Classroom</option>
+                                    <option value="Hybrid">Hybrid</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small fw-semibold">Duration (Hours)</label>
+                                <input type="number" step="0.5" min="0.5" max="500" id="prgHours" name="DurationHours" class="form-control" value="8" required />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small fw-semibold">Start Date <span class="text-danger">*</span></label>
+                                <input type="date" id="prgStart" name="StartDate" class="form-control" required />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small fw-semibold">End Date <span class="text-danger">*</span></label>
+                                <input type="date" id="prgEnd" name="EndDate" class="form-control" required />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small fw-semibold">Max Participants</label>
+                                <input type="number" min="1" max="5000" id="prgMax" name="MaxParticipants" class="form-control" value="30" required />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small fw-semibold">Trainer / Provider</label>
+                                <input type="text" id="prgTrainer" name="TrainerOrProvider" class="form-control" maxlength="150" />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small fw-semibold">Location or LMS URL</label>
+                                <input type="text" id="prgLoc" name="LocationOrUrl" class="form-control" maxlength="250" />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small fw-semibold">Status</label>
+                                <select id="prgStatus" name="ProgramStatus" class="form-select" required>
+                                    <option value="Planned">Planned</option>
+                                    <option value="Ongoing">Ongoing</option>
+                                    <option value="Completed">Completed</option>
+                                    <option value="Cancelled">Cancelled</option>
+                                </select>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label small fw-semibold">Description &amp; Objectives</label>
+                                <textarea id="prgDesc" name="Description" class="form-control" rows="2" maxlength="600"></textarea>
+                            </div>
+                            <div class="col-12">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="prgMandatory" name="IsMandatory" value="true" />
+                                    <input type="hidden" name="IsMandatory" value="false" />
+                                    <label class="form-check-label small" for="prgMandatory">Mandatory Compliance Training</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Save Program</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <script src="~/js/performance-training.js" asp-append-version="true"></script>
+}

@@ -1,0 +1,315 @@
+@using System.Text.Json
+@model AssetDetailsPageViewModel
+@{
+    ViewData["Title"] = $"{Model.Asset.AssetTag} — {Model.Asset.AssetName}";
+    ViewData["BreadcrumbParent"] = "Asset Inventory";
+    var a = Model.Asset;
+    var currentEmployeeId = User.GetEmployeeId();
+    var stBadge = a.AssetStatus switch
+    {
+        "Available" => "bg-success-subtle text-success-emphasis",
+        "Assigned" => "bg-primary-subtle text-primary-emphasis",
+        "Maintenance" => "bg-warning-subtle text-warning-emphasis",
+        _ => "bg-danger-subtle text-danger-emphasis"
+    };
+}
+
+@section PageActions {
+    <div class="d-flex flex-wrap gap-2">
+        <a asp-action="Index" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left me-1"></i>Back to Inventory
+        </a>
+        @if (a.ActiveAllocationId.HasValue && !a.ActiveAllocationAcknowledged && currentEmployeeId == a.CurrentEmployeeId)
+        {
+            <button type="button" class="btn btn-success btn-sm"
+                    onclick='HrmsAssetDoc.acknowledgeAllocation(@a.ActiveAllocationId.Value, @Html.Raw(JsonSerializer.Serialize(a.AssetName)))'>
+                <i class="bi bi-check2-circle me-1"></i>Acknowledge Receipt
+            </button>
+        }
+        @if (Model.CanManage)
+        {
+            @if (a.AssetStatus == "Available")
+            {
+                <button type="button" class="btn btn-primary btn-sm"
+                        onclick='HrmsAssetDoc.openAssignModal(@a.AssetId, @Html.Raw(JsonSerializer.Serialize($"{a.AssetTag} — {a.AssetName}")), @Html.Raw(JsonSerializer.Serialize(a.ConditionStatus)))'>
+                    <i class="bi bi-person-plus me-1"></i>Assign Asset
+                </button>
+            }
+            <button type="button" class="btn btn-outline-warning btn-sm"
+                    onclick="HrmsAssetDoc.openMaintenanceModal(null, @a.AssetId)">
+                <i class="bi bi-tools me-1"></i>Log Maintenance
+            </button>
+        }
+    </div>
+}
+
+<div class="row g-3 mb-4">
+    <div class="col-lg-5">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-transparent d-flex justify-content-between align-items-center">
+                <h6 class="mb-0 fw-semibold"><i class="bi bi-laptop me-2 text-primary"></i>Asset Specifications</h6>
+                <span class="badge @stBadge">@a.AssetStatus</span>
+            </div>
+            <div class="card-body">
+                <dl class="row mb-0 small">
+                    <dt class="col-5 text-body-secondary">Asset Tag</dt>
+                    <dd class="col-7 font-monospace fw-semibold">@a.AssetTag</dd>
+                    <dt class="col-5 text-body-secondary">Category</dt>
+                    <dd class="col-7">@a.CategoryName (@a.AssetClass)</dd>
+                    <dt class="col-5 text-body-secondary">Brand / Model</dt>
+                    <dd class="col-7">@(a.Brand ?? "-") / @(a.ModelNumber ?? "-")</dd>
+                    <dt class="col-5 text-body-secondary">Serial Number</dt>
+                    <dd class="col-7 font-monospace">@(a.SerialNumber ?? "N/A")</dd>
+                    <dt class="col-5 text-body-secondary">Branch</dt>
+                    <dd class="col-7">@(a.BranchName ?? "Corporate")</dd>
+                    <dt class="col-5 text-body-secondary">Condition</dt>
+                    <dd class="col-7">@a.ConditionStatus</dd>
+                    <dt class="col-5 text-body-secondary">Purchase Date / Cost</dt>
+                    <dd class="col-7">@(a.PurchaseDate?.ToString("dd MMM yyyy") ?? "-") &bull; @a.PurchaseCost.ToString("C2")</dd>
+                    <dt class="col-5 text-body-secondary">Warranty Expiry</dt>
+                    <dd class="col-7">@(a.WarrantyExpiryDate?.ToString("dd MMM yyyy") ?? "N/A")</dd>
+                    <dt class="col-5 text-body-secondary">Vendor</dt>
+                    <dd class="col-7">@(a.VendorName ?? "-")</dd>
+                    <dt class="col-5 text-body-secondary">Current Custodian</dt>
+                    <dd class="col-7 fw-semibold">@(a.CurrentEmployeeName ?? "In Stock")</dd>
+                    @if (!string.IsNullOrWhiteSpace(a.Notes))
+                    {
+                        <dt class="col-5 text-body-secondary">Notes</dt>
+                        <dd class="col-7">@a.Notes</dd>
+                    }
+                </dl>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-7">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-transparent">
+                <h6 class="mb-0 fw-semibold"><i class="bi bi-arrow-left-right me-2 text-primary"></i>Custody &amp; Allocation History</h6>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0 small">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Employee</th>
+                                <th>Issued</th>
+                                <th>Returned</th>
+                                <th>Condition</th>
+                                <th>Sign-Off</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (!Model.Allocations.Any())
+                            {
+                                <tr><td colspan="6" class="text-center text-body-secondary py-4">No allocation history yet.</td></tr>
+                            }
+                            else
+                            {
+                                @foreach (var al in Model.Allocations)
+                                {
+                                    <tr>
+                                        <td>
+                                            <div class="fw-semibold">@al.EmployeeName</div>
+                                            <div class="text-body-secondary">@al.EmployeeCode &bull; @al.DepartmentName</div>
+                                        </td>
+                                        <td>@al.AssignedDate.ToString("dd MMM yyyy")</td>
+                                        <td>@(al.ReturnedDate?.ToString("dd MMM yyyy") ?? "-")</td>
+                                        <td>@al.ConditionAtIssue @(al.ConditionAtReturn != null ? $"→ {al.ConditionAtReturn}" : "")</td>
+                                        <td>
+                                            @if (al.EmployeeAcknowledged)
+                                            {
+                                                <span class="badge bg-success-subtle text-success-emphasis">Signed</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-warning-subtle text-warning-emphasis">Pending</span>
+                                            }
+                                        </td>
+                                        <td><span class="badge bg-secondary-subtle text-secondary-emphasis">@al.AllocationStatus</span></td>
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Maintenance History -->
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-transparent">
+        <h6 class="mb-0 fw-semibold"><i class="bi bi-tools me-2 text-warning"></i>Maintenance &amp; Repair Timeline</h6>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0 small">
+                <thead class="table-light">
+                    <tr>
+                        <th>Type</th>
+                        <th>Service Date</th>
+                        <th>Completion</th>
+                        <th>Vendor / Technician</th>
+                        <th>Description</th>
+                        <th class="text-end">Cost</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.MaintenanceLogs.Any())
+                    {
+                        <tr><td colspan="7" class="text-center text-body-secondary py-4">No maintenance logs recorded for this asset.</td></tr>
+                    }
+                    else
+                    {
+                        @foreach (var m in Model.MaintenanceLogs)
+                        {
+                            <tr>
+                                <td class="fw-semibold">@m.MaintenanceType</td>
+                                <td>@m.ServiceDate.ToString("dd MMM yyyy")</td>
+                                <td>@(m.CompletionDate?.ToString("dd MMM yyyy") ?? "-")</td>
+                                <td>@(m.VendorOrTechnician ?? "-")</td>
+                                <td>@m.Description</td>
+                                <td class="text-end">@m.Cost.ToString("C2")</td>
+                                <td><span class="badge bg-info-subtle text-info-emphasis">@m.MaintenanceStatus</span></td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@if (Model.CanManage)
+{
+    <!-- Assign Asset Modal -->
+    <div class="modal fade" id="assignAssetModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Assign Asset Custody</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="assignAssetForm" onsubmit="event.preventDefault(); HrmsAssetDoc.submitAjaxForm('#assignAssetForm', '@Url.Action("AssignAsset")', '#assignAssetModal');">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" id="asgAssetId" name="AssetId" value="@a.AssetId" />
+                    <div class="modal-body">
+                        <div class="fw-semibold mb-3" id="asgAssetLabel">@a.AssetTag — @a.AssetName</div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold">Employee <span class="text-danger">*</span></label>
+                            <select id="asgEmployeeId" name="EmployeeId" class="form-select" required>
+                                <option value="">Select active employee...</option>
+                                @foreach (var emp in Model.Employees)
+                                {
+                                    <option value="@emp.EmployeeId">@emp.FullName (@emp.EmployeeCode)</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="row g-2 mb-3">
+                            <div class="col-6">
+                                <label class="form-label small fw-semibold">Assigned Date</label>
+                                <input type="date" id="asgDate" name="AssignedDate" class="form-control" required />
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label small fw-semibold">Expected Return</label>
+                                <input type="date" id="asgExpReturn" name="ExpectedReturnDate" class="form-control" />
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold">Condition at Issue</label>
+                            <select id="asgCondition" name="ConditionAtIssue" class="form-select">
+                                <option value="New">New</option>
+                                <option value="Good" selected>Good</option>
+                                <option value="Fair">Fair</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="form-label small fw-semibold">Remarks</label>
+                            <textarea id="asgRemarks" name="IssueRemarks" class="form-control" rows="2"></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Assign Asset</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Maintenance Modal -->
+    <div class="modal fade" id="maintenanceModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="mntModalTitle">Log Maintenance</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="maintenanceForm" onsubmit="event.preventDefault(); HrmsAssetDoc.submitAjaxForm('#maintenanceForm', '@Url.Action("SaveMaintenance")', '#maintenanceModal');">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" id="mntId" name="MaintenanceId" value="0" />
+                    <input type="hidden" id="mntAssetId" name="AssetId" value="@a.AssetId" />
+                    <div class="modal-body">
+                        <div class="row g-2 mb-3">
+                            <div class="col-6">
+                                <label class="form-label small fw-semibold">Type</label>
+                                <select id="mntType" name="MaintenanceType" class="form-select">
+                                    <option value="Repair">Repair</option>
+                                    <option value="Preventive">Preventive</option>
+                                    <option value="Upgrade">Upgrade</option>
+                                    <option value="Calibration">Calibration</option>
+                                    <option value="Inspection">Inspection</option>
+                                </select>
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label small fw-semibold">Status</label>
+                                <select id="mntStatus" name="MaintenanceStatus" class="form-select">
+                                    <option value="Scheduled">Scheduled</option>
+                                    <option value="InProgress">InProgress</option>
+                                    <option value="Completed">Completed</option>
+                                    <option value="Cancelled">Cancelled</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row g-2 mb-3">
+                            <div class="col-6">
+                                <label class="form-label small fw-semibold">Service Date</label>
+                                <input type="date" id="mntServiceDate" name="ServiceDate" class="form-control" required />
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label small fw-semibold">Completion Date</label>
+                                <input type="date" id="mntCompletionDate" name="CompletionDate" class="form-control" />
+                            </div>
+                        </div>
+                        <div class="row g-2 mb-3">
+                            <div class="col-7">
+                                <label class="form-label small fw-semibold">Vendor / Technician</label>
+                                <input type="text" id="mntVendor" name="VendorOrTechnician" class="form-control" maxlength="120" />
+                            </div>
+                            <div class="col-5">
+                                <label class="form-label small fw-semibold">Cost</label>
+                                <input type="number" step="0.01" min="0" id="mntCost" name="Cost" class="form-control" value="0" />
+                            </div>
+                        </div>
+                        <div>
+                            <label class="form-label small fw-semibold">Description <span class="text-danger">*</span></label>
+                            <textarea id="mntDesc" name="Description" class="form-control" rows="3" maxlength="500" required></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Save Log</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <script src="~/js/asset-document.js" asp-append-version="true"></script>
+}

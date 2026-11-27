@@ -1,0 +1,57 @@
+@model InitialSetupViewModel
+@{
+    Layout = "_AuthLayout";
+    ViewData["Title"] = "Initial Administrator Setup";
+}
+<div class="row justify-content-center">
+    <div class="col-11 col-md-7 col-lg-5">
+        <div class="card border-0 shadow-lg rounded-4 p-4 p-lg-5 bg-body">
+            <div class="text-center mb-4">
+                <span class="hrms-brand-icon bg-primary text-white mx-auto mb-3 d-inline-flex"><i class="bi bi-shield-check"></i></span>
+                <h1 class="h4 fw-bold mb-1">First-Run Administrator Setup</h1>
+                <p class="small text-body-secondary mb-0">
+                    Create your initial Super Administrator account to unlock EnterpriseHR.
+                </p>
+            </div>
+
+            <form asp-action="Setup" method="post" novalidate>
+                @Html.AntiForgeryToken()
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger small py-2"></div>
+
+                <div class="mb-3">
+                    <label asp-for="FullName" class="form-label small fw-semibold"></label>
+                    <input asp-for="FullName" class="form-control" placeholder="e.g. Sarah Jenkins" />
+                    <span asp-validation-for="FullName" class="text-danger small"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Username" class="form-label small fw-semibold"></label>
+                    <input asp-for="Username" class="form-control" placeholder="e.g. sysadmin" />
+                    <span asp-validation-for="Username" class="text-danger small"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Email" class="form-label small fw-semibold"></label>
+                    <input asp-for="Email" class="form-control" placeholder="admin@company.com" />
+                    <span asp-validation-for="Email" class="text-danger small"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Password" class="form-label small fw-semibold"></label>
+                    <input asp-for="Password" class="form-control" placeholder="Min 8 chars, mixed case, number & symbol" />
+                    <span asp-validation-for="Password" class="text-danger small"></span>
+                </div>
+
+                <div class="mb-4">
+                    <label asp-for="ConfirmPassword" class="form-label small fw-semibold"></label>
+                    <input asp-for="ConfirmPassword" class="form-control" />
+                    <span asp-validation-for="ConfirmPassword" class="text-danger small"></span>
+                </div>
+
+                <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold">
+                    <i class="bi bi-person-plus-fill me-2"></i>Create Super Administrator
+                </button>
+            </form>
+        </div>
+    </div>
+</div>

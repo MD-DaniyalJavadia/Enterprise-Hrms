@@ -1,0 +1,81 @@
+@model IEnumerable<DesignationListItemViewModel>
+@{
+    ViewData["Title"] = "Designations";
+    ViewData["BreadcrumbParent"] = "Organization";
+    var searchTerm = ViewData["SearchTerm"]?.ToString();
+}
+
+@section PageActions {
+    <div class="d-flex gap-2">
+        <a asp-action="Export" asp-route-search="@searchTerm" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-file-earmark-spreadsheet me-1"></i>Export CSV
+        </a>
+        @if (User.HasPermission("ORG.MANAGE"))
+        {
+            <a asp-action="Create" class="btn btn-primary btn-sm">
+                <i class="bi bi-plus-lg me-1"></i>New Designation
+            </a>
+        }
+    </div>
+}
+
+<div class="card border-0 shadow-sm mb-3">
+    <div class="card-body py-3">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-md-6">
+                <label class="form-label small fw-semibold">Search</label>
+                <input type="text" name="search" value="@searchTerm" class="form-control form-control-sm" placeholder="Code or title..." />
+            </div>
+            <div class="col-md-4 d-flex gap-2">
+                <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-funnel me-1"></i>Filter</button>
+                <a asp-action="Index" class="btn btn-outline-secondary btn-sm">Reset</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle hrms-datatable w-100">
+                <thead>
+                    <tr>
+                        <th>Code</th>
+                        <th>Designation Title</th>
+                        <th>Job Grade</th>
+                        <th>Employees</th>
+                        <th>Status</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td class="fw-semibold">@item.DesignationCode</td>
+                            <td class="fw-semibold">@item.DesignationTitle</td>
+                            <td><span class="badge bg-info-subtle text-info-emphasis">@(item.JobGrade ?? "-")</span></td>
+                            <td>@item.EmployeeCount</td>
+                            <td>
+                                <span class="badge @(item.IsActive ? "bg-success-subtle text-success-emphasis" : "bg-danger-subtle text-danger-emphasis")">
+                                    @(item.IsActive ? "Active" : "Inactive")
+                                </span>
+                            </td>
+                            <td class="text-end text-nowrap">
+                                <a asp-action="Details" asp-route-id="@item.DesignationId" class="btn btn-sm btn-outline-info"><i class="bi bi-eye"></i></a>
+                                @if (User.HasPermission("ORG.MANAGE"))
+                                {
+                                    <a asp-action="Edit" asp-route-id="@item.DesignationId" class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil"></i></a>
+                                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="HrmsOrg.confirmDelete('@Url.Action("Delete", new { id = item.DesignationId })', 'Designation')">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+@section Scripts { <script src="~/js/organization.js" asp-append-version="true"></script> }

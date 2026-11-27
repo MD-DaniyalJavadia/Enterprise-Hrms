@@ -1,0 +1,221 @@
+@model List<LeaveType>
+@{
+    ViewData["Title"] = "Leave Policies";
+    ViewData["BreadcrumbParent"] = "Leave Management";
+    var canManage = User.HasPermission("LEAVE.MANAGE");
+}
+
+@section PageActions {
+    <div class="d-flex flex-wrap gap-2">
+        <a asp-action="Balances" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-wallet2 me-1"></i>Balances
+        </a>
+        @if (canManage)
+        {
+            <button type="button" class="btn btn-primary btn-sm" onclick="HrmsLeave.openLeaveTypeModal(null)">
+                <i class="bi bi-plus-circle me-1"></i>Add Leave Policy
+            </button>
+        }
+    </div>
+}
+
+<div class="card border-0 shadow-sm">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle hrms-leave-datatable w-100">
+                <thead>
+                    <tr>
+                        <th>Code</th>
+                        <th>Policy Name</th>
+                        <th class="text-end">Annual Quota</th>
+                        <th>Paid</th>
+                        <th>Carry Forward</th>
+                        <th>Encashable</th>
+                        <th>Document</th>
+                        <th>Half Day</th>
+                        <th>Gender</th>
+                        <th>Status</th>
+                        @if (canManage)
+                        {
+                            <th class="text-end">Actions</th>
+                        }
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var lt in Model)
+                    {
+                        <tr>
+                            <td>
+                                <span class="badge text-white" style="background-color: @lt.ColorHex">@lt.LeaveCode</span>
+                            </td>
+                            <td>
+                                <div class="fw-semibold">@lt.LeaveName</div>
+                                @if (!string.IsNullOrWhiteSpace(lt.Description))
+                                {
+                                    <div class="small text-body-secondary text-truncate" style="max-width: 240px;" title="@lt.Description">@lt.Description</div>
+                                }
+                            </td>
+                            <td class="text-end fw-semibold">@lt.AnnualQuota.ToString("0.##") days</td>
+                            <td>
+                                @if (lt.IsPaid) { <span class="badge bg-success-subtle text-success-emphasis">Paid</span> }
+                                else { <span class="badge bg-secondary-subtle text-secondary-emphasis">Unpaid</span> }
+                            </td>
+                            <td class="small">
+                                @(lt.AllowCarryForward ? $"Yes (max {lt.MaxCarryForwardDays:0.##})" : "No")
+                            </td>
+                            <td class="small">@(lt.AllowEncashment ? "Yes" : "No")</td>
+                            <td class="small">@(lt.RequiresDocument ? "Required" : "Optional")</td>
+                            <td class="small">@(lt.IsHalfDayAllowed ? "Allowed" : "No")</td>
+                            <td class="small">@(string.IsNullOrWhiteSpace(lt.GenderRestriction) ? "All" : lt.GenderRestriction)</td>
+                            <td>
+                                @if (lt.IsActive) { <span class="badge bg-success-subtle text-success-emphasis">Active</span> }
+                                else { <span class="badge bg-danger-subtle text-danger-emphasis">Inactive</span> }
+                            </td>
+                            @if (canManage)
+                            {
+                                <td class="text-end text-nowrap">
+                                    <button type="button" class="btn btn-sm btn-outline-primary" title="Edit Policy"
+                                            onclick='HrmsLeave.openLeaveTypeModal(@Html.Raw(System.Text.Json.JsonSerializer.Serialize(new {
+                                                leaveTypeId = lt.LeaveTypeId,
+                                                leaveCode = lt.LeaveCode,
+                                                leaveName = lt.LeaveName,
+                                                annualQuota = lt.AnnualQuota,
+                                                isPaid = lt.IsPaid,
+                                                allowCarryForward = lt.AllowCarryForward,
+                                                maxCarryForwardDays = lt.MaxCarryForwardDays,
+                                                allowEncashment = lt.AllowEncashment,
+                                                requiresDocument = lt.RequiresDocument,
+                                                maxConsecutiveDays = lt.MaxConsecutiveDays,
+                                                isHalfDayAllowed = lt.IsHalfDayAllowed,
+                                                genderRestriction = lt.GenderRestriction ?? "",
+                                                colorHex = lt.ColorHex,
+                                                description = lt.Description ?? "",
+                                                isActive = lt.IsActive
+                                            })))'>
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-danger" title="Delete Policy"
+                                            onclick='HrmsLeave.deleteLeaveType(@lt.LeaveTypeId, @Html.Raw(System.Text.Json.JsonSerializer.Serialize(lt.LeaveName)))'>
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </td>
+                            }
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@if (canManage)
+{
+    <div class="modal fade" id="leaveTypeModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="ltModalTitle">Add Leave Policy</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="leaveTypeForm" onsubmit="event.preventDefault(); HrmsLeave.submitAjaxForm('#leaveTypeForm', '@Url.Action("SaveLeaveType")', '#leaveTypeModal');">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" id="ltId" name="LeaveTypeId" value="0" />
+                    <div class="modal-body">
+                        <div class="row g-3">
+                            <div class="col-md-3">
+                                <label class="form-label small fw-semibold">Code</label>
+                                <input id="ltCode" type="text" name="LeaveCode" class="form-control text-uppercase" maxlength="20" required />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-semibold">Leave Policy Name</label>
+                                <input id="ltName" type="text" name="LeaveName" class="form-control" maxlength="80" required />
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label small fw-semibold">Badge Color</label>
+                                <input id="ltColor" type="color" name="ColorHex" class="form-control form-control-color w-100" value="#2563eb" required />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small fw-semibold">Annual Quota (Days)</label>
+                                <input id="ltQuota" type="number" step="0.5" min="0" max="365" name="AnnualQuota" class="form-control" required />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small fw-semibold">Max Carry Forward</label>
+                                <input id="ltMaxCarry" type="number" step="0.5" min="0" max="365" name="MaxCarryForwardDays" class="form-control" value="0" />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small fw-semibold">Max Consecutive Days</label>
+                                <input id="ltMaxConsec" type="number" min="1" max="365" name="MaxConsecutiveDays" class="form-control" placeholder="No limit" />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-semibold">Gender Restriction</label>
+                                <select id="ltGender" name="GenderRestriction" class="form-select">
+                                    <option value="">None (All Employees)</option>
+                                    <option value="Female">Female Only</option>
+                                    <option value="Male">Male Only</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-semibold">Description</label>
+                                <input id="ltDescription" type="text" name="Description" class="form-control" maxlength="300" />
+                            </div>
+                            <div class="col-12">
+                                <div class="row g-2">
+                                    <div class="col-6 col-md-4">
+                                        <div class="form-check form-switch">
+                                            <input id="ltIsPaid" class="form-check-input" type="checkbox" name="IsPaid" value="true" checked />
+                                            <input type="hidden" name="IsPaid" value="false" />
+                                            <label class="form-check-label small" for="ltIsPaid">Paid Leave</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-6 col-md-4">
+                                        <div class="form-check form-switch">
+                                            <input id="ltCarryForward" class="form-check-input" type="checkbox" name="AllowCarryForward" value="true" />
+                                            <input type="hidden" name="AllowCarryForward" value="false" />
+                                            <label class="form-check-label small" for="ltCarryForward">Allow Carry Forward</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-6 col-md-4">
+                                        <div class="form-check form-switch">
+                                            <input id="ltEncashment" class="form-check-input" type="checkbox" name="AllowEncashment" value="true" />
+                                            <input type="hidden" name="AllowEncashment" value="false" />
+                                            <label class="form-check-label small" for="ltEncashment">Allow Encashment</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-6 col-md-4">
+                                        <div class="form-check form-switch">
+                                            <input id="ltReqDoc" class="form-check-input" type="checkbox" name="RequiresDocument" value="true" />
+                                            <input type="hidden" name="RequiresDocument" value="false" />
+                                            <label class="form-check-label small" for="ltReqDoc">Requires Attachment</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-6 col-md-4">
+                                        <div class="form-check form-switch">
+                                            <input id="ltHalfDay" class="form-check-input" type="checkbox" name="IsHalfDayAllowed" value="true" checked />
+                                            <input type="hidden" name="IsHalfDayAllowed" value="false" />
+                                            <label class="form-check-label small" for="ltHalfDay">Allow Half-Day</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-6 col-md-4">
+                                        <div class="form-check form-switch">
+                                            <input id="ltIsActive" class="form-check-input" type="checkbox" name="IsActive" value="true" checked />
+                                            <input type="hidden" name="IsActive" value="false" />
+                                            <label class="form-check-label small" for="ltIsActive">Policy Active</label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Save Policy</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <script src="~/js/leave.js" asp-append-version="true"></script>
+}

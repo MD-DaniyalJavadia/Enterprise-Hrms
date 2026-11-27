@@ -1,0 +1,132 @@
+@using System.Text.Json
+@model List<HRMS.Models.Entities.ExpenseCategory>
+@{
+    ViewData["Title"] = "Expense Categories";
+    ViewData["BreadcrumbParent"] = "Loans & Expenses";
+    var camelOpts = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+}
+
+@section PageActions {
+    <div class="d-flex flex-wrap gap-2">
+        <a asp-action="Index" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left me-1"></i>Expense Claims
+        </a>
+        <button type="button" class="btn btn-primary btn-sm" onclick="HrmsLoanExp.openCategoryModal()">
+            <i class="bi bi-plus-lg me-1"></i>New Category
+        </button>
+    </div>
+}
+
+<div class="card border-0 shadow-sm">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle hrms-le-datatable w-100">
+                <thead>
+                    <tr>
+                        <th>Code &amp; Category</th>
+                        <th class="text-end">Max Limit / Claim</th>
+                        <th>Receipt Policy</th>
+                        <th class="text-center">Claims</th>
+                        <th>Status</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var cat in Model)
+                    {
+                        <tr>
+                            <td>
+                                <div class="fw-semibold">@cat.CategoryName</div>
+                                <div class="small text-body-secondary">
+                                    <span class="badge bg-light text-dark border me-1">@cat.CategoryCode</span>@cat.Description
+                                </div>
+                            </td>
+                            <td class="text-end fw-medium">@(cat.MaxLimitPerClaim.HasValue ? cat.MaxLimitPerClaim.Value.ToString("C0") : "No Limit")</td>
+                            <td>
+                                <span class="badge @(cat.RequiresReceipt ? "bg-info-subtle text-info-emphasis" : "bg-light text-dark border")">
+                                    @(cat.RequiresReceipt ? "Receipt Mandatory" : "Optional")
+                                </span>
+                            </td>
+                            <td class="text-center"><span class="badge bg-secondary-subtle text-secondary-emphasis">@cat.ClaimsCount</span></td>
+                            <td>
+                                <span class="badge @(cat.IsActive ? "bg-success-subtle text-success-emphasis" : "bg-secondary-subtle text-secondary-emphasis")">
+                                    @(cat.IsActive ? "Active" : "Inactive")
+                                </span>
+                            </td>
+                            <td class="text-end text-nowrap">
+                                <button type="button" class="btn btn-sm btn-outline-primary" title="Edit Category"
+                                        onclick='HrmsLoanExp.openCategoryModal(@Html.Raw(JsonSerializer.Serialize(cat, camelOpts)))'>
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                @if (cat.ClaimsCount == 0)
+                                {
+                                    <button type="button" class="btn btn-sm btn-outline-danger" title="Delete Category"
+                                            onclick='HrmsLoanExp.deleteCategory(@cat.CategoryId, @Html.Raw(JsonSerializer.Serialize(cat.CategoryName)))'>
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="expenseCategoryModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="ecModalTitle">Add Expense Category</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="expenseCategoryForm" onsubmit="event.preventDefault(); HrmsLoanExp.submitAjaxForm('#expenseCategoryForm', '@Url.Action("SaveCategory")', '#expenseCategoryModal');">
+                @Html.AntiForgeryToken()
+                <input type="hidden" id="ecId" name="CategoryId" value="0" />
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label small fw-semibold">Code <span class="text-danger">*</span></label>
+                            <input type="text" id="ecCode" name="CategoryCode" class="form-control" maxlength="20" required />
+                        </div>
+                        <div class="col-md-8">
+                            <label class="form-label small fw-semibold">Category Name <span class="text-danger">*</span></label>
+                            <input type="text" id="ecName" name="CategoryName" class="form-control" maxlength="100" required />
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small fw-semibold">Max Limit Per Claim (Optional)</label>
+                            <input type="number" step="0.01" min="1" id="ecLimit" name="MaxLimitPerClaim" class="form-control" placeholder="Leave blank for unlimited" />
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small fw-semibold">Description</label>
+                            <textarea id="ecDesc" name="Description" class="form-control" rows="2" maxlength="400"></textarea>
+                        </div>
+                        <div class="col-6">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="ecReceipt" name="RequiresReceipt" value="true" checked />
+                                <input type="hidden" name="RequiresReceipt" value="false" />
+                                <label class="form-check-label small" for="ecReceipt">Requires Receipt</label>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="ecActive" name="IsActive" value="true" checked />
+                                <input type="hidden" name="IsActive" value="false" />
+                                <label class="form-check-label small" for="ecActive">Category Active</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Category</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/loan-expense.js" asp-append-version="true"></script>
+}

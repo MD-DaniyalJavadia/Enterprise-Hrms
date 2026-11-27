@@ -1,0 +1,183 @@
+@model PayrollStructuresPageViewModel
+@{
+    ViewData["Title"] = "Employee Salary Structures";
+    ViewData["BreadcrumbParent"] = "Payroll";
+}
+
+@section PageActions {
+    <div class="d-flex flex-wrap gap-2">
+        <a asp-action="Components" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-sliders2 me-1"></i>Components &amp; Tax Slabs
+        </a>
+        <a asp-action="Index" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-receipt-cutoff me-1"></i>Payroll Runs
+        </a>
+    </div>
+}
+
+<!-- Filter Strip -->
+<div class="card border-0 shadow-sm mb-3">
+    <div class="card-body py-3">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label small fw-semibold">Department</label>
+                <select name="departmentId" class="form-select form-select-sm">
+                    <option value="">All Departments</option>
+                    @foreach (var d in Model.Departments)
+                    {
+                        <option value="@d.DepartmentId" selected="@(Model.DepartmentId == d.DepartmentId)">@d.DepartmentName</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-5">
+                <label class="form-label small fw-semibold">Search Employee</label>
+                <input type="text" name="search" value="@Model.SearchTerm" class="form-control form-control-sm" placeholder="Code or name..." />
+            </div>
+            <div class="col-md-3 d-flex gap-2">
+                <button type="submit" class="btn btn-primary btn-sm flex-fill"><i class="bi bi-funnel me-1"></i>Filter</button>
+                <a asp-action="Structures" class="btn btn-outline-secondary btn-sm" title="Reset"><i class="bi bi-arrow-counterclockwise"></i></a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Structures Table -->
+<div class="card border-0 shadow-sm">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle hrms-payroll-datatable w-100">
+                <thead>
+                    <tr>
+                        <th>Employee</th>
+                        <th>Department</th>
+                        <th class="text-end">Annual Base</th>
+                        <th class="text-end">Monthly Basic</th>
+                        <th class="text-end">Monthly Gross Pkg</th>
+                        <th class="text-end">Monthly Ded.</th>
+                        <th class="text-end">OT Rate/Hr</th>
+                        <th>Method</th>
+                        <th>Structure</th>
+                        <th class="text-end">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var st in Model.Structures)
+                    {
+                        <tr>
+                            <td>
+                                <div class="fw-semibold">@st.FullName</div>
+                                <div class="small text-body-secondary">@st.EmployeeCode &bull; @st.DesignationTitle</div>
+                            </td>
+                            <td class="small">@st.DepartmentName</td>
+                            <td class="text-end">@st.AnnualBaseSalary.ToString("N2")</td>
+                            <td class="text-end fw-medium">@st.BasicSalaryMonthly.ToString("N2")</td>
+                            <td class="text-end fw-bold text-primary">@st.MonthlyGrossPackage.ToString("N2")</td>
+                            <td class="text-end text-danger">@st.MonthlyRecurringDeductions.ToString("N2")</td>
+                            <td class="text-end small">@st.HourlyOvertimeRate.ToString("N2")</td>
+                            <td class="small">@st.PaymentMethod</td>
+                            <td>
+                                @if (st.HasCustomStructure)
+                                {
+                                    <span class="badge bg-success-subtle text-success-emphasis">Configured</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary-subtle text-secondary-emphasis">Default</span>
+                                }
+                            </td>
+                            <td class="text-end">
+                                <button type="button" class="btn btn-sm btn-outline-primary" onclick="HrmsPayroll.openStructureModal(@st.EmployeeId)">
+                                    <i class="bi bi-pencil-square me-1"></i>Configure
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Configure Salary Structure Modal -->
+<div class="modal fade" id="structureModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-diagram-2 me-2 text-primary"></i>Configure Employee Salary Structure</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form onsubmit="event.preventDefault(); HrmsPayroll.saveStructure();">
+                <input type="hidden" id="stEmployeeId" value="0" />
+                <div class="modal-body">
+                    <div class="alert alert-light border d-flex flex-wrap justify-content-between align-items-center mb-3">
+                        <strong id="stEmployeeLabel">-</strong>
+                        <div class="d-flex gap-3 small">
+                            <span>Monthly Gross: <strong class="text-primary" id="stPreviewGross">0.00</strong></span>
+                            <span>Deductions: <strong class="text-danger" id="stPreviewDed">0.00</strong></span>
+                            <span>Pre-Tax Est.: <strong class="text-success" id="stPreviewNetEst">0.00</strong></span>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-3">
+                            <label class="form-label small fw-semibold">Effective From</label>
+                            <input id="stEffectiveFrom" type="date" class="form-control form-control-sm" required />
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small fw-semibold">Basic Salary (Monthly)</label>
+                            <input id="stBasicMonthly" type="number" step="0.01" min="1" class="form-control form-control-sm" required />
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label small fw-semibold">Hourly OT Rate</label>
+                            <input id="stOtRate" type="number" step="0.01" min="0" class="form-control form-control-sm" required />
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label small fw-semibold">Tax Regime</label>
+                            <select id="stTaxRegime" class="form-select form-select-sm">
+                                <option value="Standard">Standard</option>
+                                <option value="Exempt">Tax Exempt</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label small fw-semibold">Payment Method</label>
+                            <select id="stPayMethod" class="form-select form-select-sm">
+                                <option value="BankTransfer">Bank Transfer</option>
+                                <option value="Check">Check</option>
+                                <option value="Cash">Cash</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive border rounded">
+                        <table class="table table-sm align-middle mb-0">
+                            <thead class="table-light small">
+                                <tr>
+                                    <th style="width: 40px;">Use</th>
+                                    <th>Component</th>
+                                    <th>Type</th>
+                                    <th style="width: 160px;">Calculation</th>
+                                    <th style="width: 150px;">Amount / %</th>
+                                    <th class="text-end" style="width: 140px;">Monthly Value</th>
+                                </tr>
+                            </thead>
+                            <tbody id="stItemsBody"></tbody>
+                        </table>
+                    </div>
+
+                    <div class="mt-3">
+                        <label class="form-label small fw-semibold">Remarks</label>
+                        <input id="stRemarks" type="text" class="form-control form-control-sm" maxlength="300" placeholder="Optional compensation revision notes..." />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Salary Structure</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/payroll.js" asp-append-version="true"></script>
+}

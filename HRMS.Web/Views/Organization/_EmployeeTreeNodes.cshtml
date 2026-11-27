@@ -1,0 +1,23 @@
+@model IEnumerable<OrgChartEmployeeNodeViewModel>
+<ul>
+    @foreach (var emp in Model)
+    {
+        <li>
+            <div class="hrms-org-node">
+                <span class="hrms-avatar" style="width:30px;height:30px;font-size:0.72rem;">
+                    @string.Join("", emp.FullName.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(x => char.ToUpperInvariant(x[0])))
+                </span>
+                <div>
+                    <div class="fw-semibold small">@emp.FullName <span class="text-body-secondary">(@emp.EmployeeCode)</span></div>
+                    <div class="text-body-secondary" style="font-size: 0.75rem;">
+                        @emp.DesignationTitle &bull; @emp.DepartmentName (@emp.BranchName)
+                    </div>
+                </div>
+            </div>
+            @if (emp.DirectReports.Any())
+            {
+                <partial name="_EmployeeTreeNodes" model="emp.DirectReports" />
+            }
+        </li>
+    }
+</ul>

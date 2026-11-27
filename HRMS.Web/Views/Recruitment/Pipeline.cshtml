@@ -1,0 +1,298 @@
+@using System.Text.Json
+@model PipelinePageViewModel
+@{
+    ViewData["Title"] = "Applicant Pipeline";
+    ViewData["BreadcrumbParent"] = "Recruitment";
+    var canManage = User.HasPermission("RECRUITMENT.MANAGE");
+}
+
+@section PageActions {
+    <div class="d-flex flex-wrap gap-2">
+        <a asp-action="Index" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-megaphone me-1"></i>Requisitions
+        </a>
+        <a asp-action="Interviews" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-camera-video me-1"></i>Interviews
+        </a>
+        @if (canManage)
+        {
+            <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#applyCandidateModal">
+                <i class="bi bi-person-plus me-1"></i>Add Applicant to Pipeline
+            </button>
+        }
+    </div>
+}
+
+<!-- Pipeline Stage KPI Strip -->
+<div class="row g-2 mb-3">
+    <div class="col-6 col-md-3 col-xl">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body py-2 px-3">
+                <div class="small text-secondary fw-semibold">Applied</div>
+                <div class="fs-5 fw-bold">@Model.StageCounts.AppliedCount</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3 col-xl">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body py-2 px-3">
+                <div class="small text-info fw-semibold">Screening</div>
+                <div class="fs-5 fw-bold text-info">@Model.StageCounts.ScreeningCount</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3 col-xl">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body py-2 px-3">
+                <div class="small text-primary fw-semibold">Interview</div>
+                <div class="fs-5 fw-bold text-primary">@Model.StageCounts.InterviewCount</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3 col-xl">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body py-2 px-3">
+                <div class="small text-warning fw-semibold">Assessment</div>
+                <div class="fs-5 fw-bold text-warning">@Model.StageCounts.AssessmentCount</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-4 col-xl">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body py-2 px-3">
+                <div class="small text-purple fw-semibold">Offer</div>
+                <div class="fs-5 fw-bold">@Model.StageCounts.OfferCount</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-4 col-xl">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body py-2 px-3">
+                <div class="small text-success fw-semibold">Hired</div>
+                <div class="fs-5 fw-bold text-success">@Model.StageCounts.HiredCount</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-md-4 col-xl">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body py-2 px-3">
+                <div class="small text-danger fw-semibold">Rejected / Withdrawn</div>
+                <div class="fs-5 fw-bold text-danger">@Model.StageCounts.ClosedCount</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filter Strip -->
+<div class="card border-0 shadow-sm mb-3">
+    <div class="card-body py-3">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-md-5">
+                <label class="form-label small fw-semibold">Job Requisition</label>
+                <select name="requisitionId" class="form-select form-select-sm hrms-select2">
+                    <option value="">All Requisitions</option>
+                    @foreach (var req in Model.OpenRequisitions)
+                    {
+                        <option value="@req.RequisitionId" selected="@(Model.RequisitionId == req.RequisitionId)">@req.RequisitionCode — @req.JobTitle</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label small fw-semibold">Pipeline Stage</label>
+                <select name="stage" class="form-select form-select-sm">
+                    <option value="">All Stages</option>
+                    @foreach (var st in new[] { "Applied", "Screening", "Interview", "Assessment", "Offer", "Hired", "Rejected", "Withdrawn" })
+                    {
+                        <option value="@st" selected="@(string.Equals(Model.PipelineStage, st, StringComparison.OrdinalIgnoreCase))">@st</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-3 d-flex gap-2">
+                <button type="submit" class="btn btn-primary btn-sm flex-fill"><i class="bi bi-funnel me-1"></i>Filter</button>
+                <a asp-action="Pipeline" class="btn btn-outline-secondary btn-sm" title="Reset"><i class="bi bi-arrow-counterclockwise"></i></a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Applications Table -->
+<div class="card border-0 shadow-sm">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle hrms-rec-datatable w-100">
+                <thead>
+                    <tr>
+                        <th>Candidate</th>
+                        <th>Requisition</th>
+                        <th>Experience</th>
+                        <th class="text-center">Match Score</th>
+                        <th>Applied</th>
+                        <th>Current Stage</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var app in Model.Applications)
+                    {
+                        var stageBadge = app.PipelineStage switch
+                        {
+                            "Hired" => "bg-success-subtle text-success-emphasis",
+                            "Offer" => "bg-primary-subtle text-primary-emphasis",
+                            "Interview" => "bg-info-subtle text-info-emphasis",
+                            "Assessment" => "bg-warning-subtle text-warning-emphasis",
+                            "Rejected" or "Withdrawn" => "bg-danger-subtle text-danger-emphasis",
+                            _ => "bg-secondary-subtle text-secondary-emphasis"
+                        };
+                        <tr>
+                            <td>
+                                <div class="fw-semibold">@app.CandidateName</div>
+                                <div class="small text-body-secondary">@app.CandidateEmail @(!string.IsNullOrWhiteSpace(app.CandidatePhone) ? $"• {app.CandidatePhone}" : "")</div>
+                            </td>
+                            <td>
+                                <div class="fw-medium">@app.JobTitle</div>
+                                <div class="small text-body-secondary">@app.RequisitionCode &bull; @app.DepartmentName</div>
+                            </td>
+                            <td class="small">
+                                <div>@app.TotalExperienceYears.ToString("0.0") yrs</div>
+                                <div class="text-body-secondary">@(app.CurrentJobTitle ?? "-")</div>
+                            </td>
+                            <td class="text-center">
+                                @if (app.MatchScore.HasValue)
+                                {
+                                    <span class="badge bg-light text-dark border">@app.MatchScore%</span>
+                                }
+                                else
+                                {
+                                    <span class="text-body-secondary small">-</span>
+                                }
+                            </td>
+                            <td class="small">@app.AppliedDate.ToString("dd MMM yyyy")</td>
+                            <td>
+                                <span class="badge @stageBadge">@app.PipelineStage</span>
+                                @if (!string.IsNullOrWhiteSpace(app.RejectionReason))
+                                {
+                                    <div class="small text-danger text-truncate" style="max-width: 180px;" title="@app.RejectionReason">@app.RejectionReason</div>
+                                }
+                            </td>
+                            <td class="text-end text-nowrap">
+                                @if (!string.IsNullOrWhiteSpace(app.ResumeStoredName))
+                                {
+                                    <a asp-action="DownloadResume" asp-route-id="@app.CandidateId" class="btn btn-sm btn-outline-secondary" title="Resume">
+                                        <i class="bi bi-file-earmark-arrow-down"></i>
+                                    </a>
+                                }
+                                @if (app.HiredEmployeeId.HasValue)
+                                {
+                                    <a asp-controller="Employee" asp-action="Details" asp-route-id="@app.HiredEmployeeId.Value" class="btn btn-sm btn-outline-success" title="View Onboarded Employee">
+                                        <i class="bi bi-person-check"></i>
+                                    </a>
+                                }
+                                @if (canManage && app.PipelineStage != "Hired")
+                                {
+                                    <button type="button" class="btn btn-sm btn-outline-primary" title="Move Stage"
+                                            onclick='HrmsRec.openMoveStageModal(@app.ApplicationId, @Html.Raw(JsonSerializer.Serialize(app.CandidateName)), @Html.Raw(JsonSerializer.Serialize(app.PipelineStage)))'>
+                                        <i class="bi bi-arrow-left-right me-1"></i>Stage
+                                    </button>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@if (canManage)
+{
+    <!-- Submit Application Modal -->
+    <div class="modal fade" id="applyCandidateModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-person-plus me-2 text-primary"></i>Add Candidate to Pipeline</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="applyCandidateForm" onsubmit="event.preventDefault(); HrmsRec.submitAjaxForm('#applyCandidateForm', '@Url.Action("SubmitApplication")', '#applyCandidateModal');">
+                    @Html.AntiForgeryToken()
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold">Open Requisition <span class="text-danger">*</span></label>
+                            <select name="RequisitionId" class="form-select" required>
+                                <option value="">Select Open Requisition</option>
+                                @foreach (var req in Model.OpenRequisitions)
+                                {
+                                    <option value="@req.RequisitionId" selected="@(Model.RequisitionId == req.RequisitionId)">@req.RequisitionCode — @req.JobTitle (@req.DepartmentName)</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold">Candidate <span class="text-danger">*</span></label>
+                            <select name="CandidateId" class="form-select" required>
+                                <option value="">Select Candidate</option>
+                                @foreach (var cand in Model.Candidates)
+                                {
+                                    <option value="@cand.CandidateId">@cand.FullName (@cand.Email)</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label small fw-semibold">Initial Match Score (0 - 100)</label>
+                            <input type="number" name="MatchScore" class="form-control" min="0" max="100" placeholder="Optional screening match %" />
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Add to Pipeline</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Move Pipeline Stage Modal -->
+    <div class="modal fade" id="moveStageModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-arrow-left-right me-2 text-primary"></i>Update Pipeline Stage</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="moveStageForm" onsubmit="event.preventDefault(); HrmsRec.submitAjaxForm('#moveStageForm', '@Url.Action("MoveStage")', '#moveStageModal');">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" id="mvAppId" name="ApplicationId" value="0" />
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <div class="small text-body-secondary">Applicant</div>
+                            <div class="fw-semibold" id="mvCandidateLabel"></div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold">Target Stage <span class="text-danger">*</span></label>
+                            <select id="mvStage" name="PipelineStage" class="form-select" required>
+                                <option value="Applied">Applied</option>
+                                <option value="Screening">Screening</option>
+                                <option value="Interview">Interview</option>
+                                <option value="Assessment">Assessment</option>
+                                <option value="Offer">Offer</option>
+                                <option value="Rejected">Rejected</option>
+                                <option value="Withdrawn">Withdrawn</option>
+                            </select>
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label small fw-semibold">Reason / Notes (for Rejected or Withdrawn)</label>
+                            <textarea id="mvReason" name="RejectionReason" class="form-control" rows="2" maxlength="300"></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Update Stage</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <script src="~/js/recruitment.js" asp-append-version="true"></script>
+}

@@ -1,0 +1,304 @@
+@model PayrollComponentsPageViewModel
+@{
+    ViewData["Title"] = "Salary Components & Tax Slabs";
+    ViewData["BreadcrumbParent"] = "Payroll";
+}
+
+@section PageActions {
+    <div class="d-flex flex-wrap gap-2">
+        <a asp-action="Structures" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-diagram-2 me-1"></i>Salary Structures
+        </a>
+        <button type="button" class="btn btn-outline-primary btn-sm" onclick="HrmsPayroll.openTaxSlabModal(null)">
+            <i class="bi bi-percent me-1"></i>Add Tax Bracket
+        </button>
+        <button type="button" class="btn btn-primary btn-sm" onclick="HrmsPayroll.openComponentModal(null)">
+            <i class="bi bi-plus-circle me-1"></i>Add Component
+        </button>
+    </div>
+}
+
+<!-- Salary Components Card -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-transparent d-flex justify-content-between align-items-center py-3">
+        <h6 class="fw-bold mb-0"><i class="bi bi-sliders2 me-2 text-primary"></i>Salary Components</h6>
+        <span class="small text-body-secondary">@Model.Components.Count configured component(s)</span>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle hrms-payroll-datatable w-100">
+                <thead>
+                    <tr>
+                        <th>Code</th>
+                        <th>Component Name</th>
+                        <th>Type</th>
+                        <th>Calculation</th>
+                        <th class="text-end">Default Value</th>
+                        <th>Taxable</th>
+                        <th>Statutory</th>
+                        <th>Status</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var c in Model.Components)
+                    {
+                        var typeBadge = c.ComponentType switch
+                        {
+                            "Earning" => "bg-success-subtle text-success-emphasis",
+                            "Deduction" => "bg-danger-subtle text-danger-emphasis",
+                            _ => "bg-info-subtle text-info-emphasis"
+                        };
+                        <tr>
+                            <td class="fw-semibold">@c.ComponentCode</td>
+                            <td>
+                                <span class="fw-medium">@c.ComponentName</span>
+                                @if (c.IsSystemComponent)
+                                {
+                                    <span class="badge bg-secondary-subtle text-secondary-emphasis ms-1">System</span>
+                                }
+                            </td>
+                            <td><span class="badge @typeBadge">@c.ComponentType</span></td>
+                            <td class="small">@c.CalculationType</td>
+                            <td class="text-end fw-medium">
+                                @(c.CalculationType == "PercentOfBasic" ? $"{c.DefaultValue:0.##}%" : c.DefaultValue.ToString("N2"))
+                            </td>
+                            <td class="small">@(c.IsTaxable ? "Yes" : "No")</td>
+                            <td class="small">@(c.IsStatutory ? "Yes" : "No")</td>
+                            <td>
+                                @if (c.IsActive) { <span class="badge bg-success-subtle text-success-emphasis">Active</span> }
+                                else { <span class="badge bg-danger-subtle text-danger-emphasis">Inactive</span> }
+                            </td>
+                            <td class="text-end text-nowrap">
+                                <button type="button" class="btn btn-sm btn-outline-primary" title="Edit Component"
+                                        onclick='HrmsPayroll.openComponentModal(@Html.Raw(System.Text.Json.JsonSerializer.Serialize(new {
+                                            componentId = c.ComponentId,
+                                            componentCode = c.ComponentCode,
+                                            componentName = c.ComponentName,
+                                            componentType = c.ComponentType,
+                                            calculationType = c.CalculationType,
+                                            defaultValue = c.DefaultValue,
+                                            isTaxable = c.IsTaxable,
+                                            isStatutory = c.IsStatutory,
+                                            displayOrder = c.DisplayOrder,
+                                            isActive = c.IsActive
+                                        })))'>
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                @if (!c.IsSystemComponent)
+                                {
+                                    <button type="button" class="btn btn-sm btn-outline-danger" title="Delete Component"
+                                            onclick='HrmsPayroll.deleteComponent(@c.ComponentId, @Html.Raw(System.Text.Json.JsonSerializer.Serialize(c.ComponentName)))'>
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Progressive Income Tax Slabs Card -->
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-transparent d-flex flex-wrap justify-content-between align-items-center py-3 gap-2">
+        <h6 class="fw-bold mb-0"><i class="bi bi-percent me-2 text-danger"></i>Progressive Annual Income Tax Brackets</h6>
+        <form method="get" class="d-flex gap-2 align-items-center">
+            <select name="taxYear" class="form-select form-select-sm" style="width: 130px;">
+                <option value="">All Years</option>
+                @for (int y = DateTime.Today.Year - 2; y <= DateTime.Today.Year + 1; y++)
+                {
+                    <option value="@y" selected="@(Model.FilterTaxYear == y)">@y</option>
+                }
+            </select>
+            <button type="submit" class="btn btn-sm btn-outline-primary">Filter</button>
+        </form>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Tax Year</th>
+                        <th>Bracket Name</th>
+                        <th class="text-end">Min Annual Income</th>
+                        <th class="text-end">Max Annual Income</th>
+                        <th class="text-end">Rate (%)</th>
+                        <th class="text-end">Fixed Amount</th>
+                        <th>Status</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var s in Model.TaxSlabs)
+                    {
+                        <tr>
+                            <td class="fw-semibold">@s.TaxYear</td>
+                            <td>@s.SlabName</td>
+                            <td class="text-end">@s.MinAnnualIncome.ToString("N2")</td>
+                            <td class="text-end">@(s.MaxAnnualIncome.HasValue ? s.MaxAnnualIncome.Value.ToString("N2") : "Unlimited")</td>
+                            <td class="text-end fw-semibold">@s.TaxRatePercent.ToString("0.##")%</td>
+                            <td class="text-end">@s.FixedTaxAmount.ToString("N2")</td>
+                            <td>
+                                @if (s.IsActive) { <span class="badge bg-success-subtle text-success-emphasis">Active</span> }
+                                else { <span class="badge bg-danger-subtle text-danger-emphasis">Inactive</span> }
+                            </td>
+                            <td class="text-end text-nowrap">
+                                <button type="button" class="btn btn-sm btn-outline-primary" title="Edit Tax Slab"
+                                        onclick='HrmsPayroll.openTaxSlabModal(@Html.Raw(System.Text.Json.JsonSerializer.Serialize(new {
+                                            taxSlabId = s.TaxSlabId,
+                                            taxYear = s.TaxYear,
+                                            slabName = s.SlabName,
+                                            minAnnualIncome = s.MinAnnualIncome,
+                                            maxAnnualIncome = s.MaxAnnualIncome,
+                                            taxRatePercent = s.TaxRatePercent,
+                                            fixedTaxAmount = s.FixedTaxAmount,
+                                            isActive = s.IsActive
+                                        })))'>
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-danger" title="Delete Tax Slab"
+                                        onclick='HrmsPayroll.deleteTaxSlab(@s.TaxSlabId, @Html.Raw(System.Text.Json.JsonSerializer.Serialize(s.SlabName)))'>
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Salary Component Modal -->
+<div class="modal fade" id="componentModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="compModalTitle">Add Salary Component</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="componentForm" onsubmit="event.preventDefault(); HrmsPayroll.submitAjaxForm('#componentForm', '@Url.Action("SaveComponent")', '#componentModal', false);">
+                @Html.AntiForgeryToken()
+                <input type="hidden" id="compId" name="ComponentId" value="0" />
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label small fw-semibold">Code</label>
+                            <input id="compCode" type="text" name="ComponentCode" class="form-control text-uppercase" maxlength="20" required />
+                        </div>
+                        <div class="col-md-8">
+                            <label class="form-label small fw-semibold">Component Name</label>
+                            <input id="compName" type="text" name="ComponentName" class="form-control" maxlength="100" required />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-semibold">Component Type</label>
+                            <select id="compType" name="ComponentType" class="form-select" required>
+                                <option value="Earning">Earning</option>
+                                <option value="Deduction">Deduction</option>
+                                <option value="EmployerContribution">Employer Contribution</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-semibold">Calculation Basis</label>
+                            <select id="compCalcType" name="CalculationType" class="form-select" required>
+                                <option value="Fixed">Fixed Monthly Amount</option>
+                                <option value="PercentOfBasic">% of Basic Salary</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label small fw-semibold">Default</label>
+                            <input id="compDefaultVal" type="number" step="0.01" min="0" name="DefaultValue" class="form-control" value="0" required />
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label small fw-semibold">Order</label>
+                            <input id="compOrder" type="number" min="1" max="999" name="DisplayOrder" class="form-control" value="10" required />
+                        </div>
+                        <div class="col-12 d-flex flex-wrap gap-4 pt-1">
+                            <div class="form-check form-switch">
+                                <input id="compTaxable" class="form-check-input" type="checkbox" name="IsTaxable" value="true" checked />
+                                <input type="hidden" name="IsTaxable" value="false" />
+                                <label class="form-check-label small" for="compTaxable">Taxable Component</label>
+                            </div>
+                            <div class="form-check form-switch">
+                                <input id="compStatutory" class="form-check-input" type="checkbox" name="IsStatutory" value="true" />
+                                <input type="hidden" name="IsStatutory" value="false" />
+                                <label class="form-check-label small" for="compStatutory">Statutory / Compliance</label>
+                            </div>
+                            <div class="form-check form-switch">
+                                <input id="compActive" class="form-check-input" type="checkbox" name="IsActive" value="true" checked />
+                                <input type="hidden" name="IsActive" value="false" />
+                                <label class="form-check-label small" for="compActive">Active</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Component</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Tax Slab Modal -->
+<div class="modal fade" id="taxSlabModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="slabModalTitle">Add Tax Bracket</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="taxSlabForm" onsubmit="event.preventDefault(); HrmsPayroll.submitAjaxForm('#taxSlabForm', '@Url.Action("SaveTaxSlab")', '#taxSlabModal', false);">
+                @Html.AntiForgeryToken()
+                <input type="hidden" id="slabId" name="TaxSlabId" value="0" />
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label small fw-semibold">Tax Year</label>
+                            <input id="slabYear" type="number" min="2020" max="2050" name="TaxYear" class="form-control" value="@DateTime.Today.Year" required />
+                        </div>
+                        <div class="col-md-8">
+                            <label class="form-label small fw-semibold">Bracket Name</label>
+                            <input id="slabName" type="text" name="SlabName" class="form-control" maxlength="80" required />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Min Annual Income</label>
+                            <input id="slabMin" type="number" step="0.01" min="0" name="MinAnnualIncome" class="form-control" required />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Max Annual Income</label>
+                            <input id="slabMax" type="number" step="0.01" min="0" name="MaxAnnualIncome" class="form-control" placeholder="Blank = Unlimited" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Tax Rate (%)</label>
+                            <input id="slabRate" type="number" step="0.01" min="0" max="100" name="TaxRatePercent" class="form-control" required />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Fixed Tax Amount</label>
+                            <input id="slabFixed" type="number" step="0.01" min="0" name="FixedTaxAmount" class="form-control" value="0" required />
+                        </div>
+                        <div class="col-12">
+                            <div class="form-check form-switch">
+                                <input id="slabActive" class="form-check-input" type="checkbox" name="IsActive" value="true" checked />
+                                <input type="hidden" name="IsActive" value="false" />
+                                <label class="form-check-label small" for="slabActive">Active Bracket</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Tax Bracket</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/payroll.js" asp-append-version="true"></script>
+}
